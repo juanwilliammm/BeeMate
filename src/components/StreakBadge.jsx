@@ -13,24 +13,24 @@ export default function StreakBadge({ days, expiringSoon = false, size = 'sm' })
           ? `Streak ${days} hari aktif! Video call terbuka.`
           : `Streak ${days} hari (butuh ${3 - days} hari lagi untuk membuka Video Call)`
       }
-      className={`inline-flex items-center gap-1 rounded-full font-bold select-none ${
+      className={`inline-flex items-center gap-1 rounded-full font-extrabold select-none ${
         size === 'lg' ? 'px-3 py-1 text-xs' : 'px-2.5 py-0.5 text-[11px]'
       } ${
         isUnlocked
-          ? 'bg-[#FF4D8D] text-[#0A0A0E] shadow-sm shadow-[#FF4D8D]/30'
-          : 'bg-[#1E1E2A] text-[#FF85B3] border border-[#FF4D8D]/40'
+          ? 'bg-[#F59E0B] text-[#0F1115] shadow-sm shadow-[#F59E0B]/30'
+          : 'bg-[#222631] text-[#FBBF24] border border-[#F59E0B]/45'
       }`}
     >
       <Flame
         size={size === 'lg' ? 14 : 12}
-        className={isUnlocked ? 'fill-[#0A0A0E] text-[#0A0A0E] animate-pulse' : 'fill-[#FF4D8D] text-[#FF4D8D]'}
+        className={isUnlocked ? 'fill-[#0F1115] text-[#0F1115]' : 'fill-[#F59E0B] text-[#F59E0B]'}
       />
       <span>{days}</span>
       {expiringSoon && (
         <Hourglass
           size={size === 'lg' ? 13 : 11}
-          className={isUnlocked ? 'text-[#0A0A0E] ml-0.5' : 'text-[#FF85B3] ml-0.5'}
-          title="Streak hampir berakhir! Balas pesan untuk menjaga streak."
+          className={isUnlocked ? 'text-[#0F1115] ml-0.5' : 'text-[#FBBF24] ml-0.5'}
+          title="Streak hampir berakhir! Balas pesan dua arah untuk menjaga streak."
         />
       )}
     </div>

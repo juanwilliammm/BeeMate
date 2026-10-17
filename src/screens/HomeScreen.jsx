@@ -1,38 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Compass,
   MessageCircle,
   BadgeCheck,
-  Sparkles,
   ArrowRight,
   PhoneIncoming,
-  Heart
+  Zap,
+  Target,
+  BookOpen
 } from 'lucide-react';
+import { GOALS, calculateMatchScore } from '../data/mockData';
 import StreakBadge from '../components/StreakBadge';
 
 export default function HomeScreen({
   user,
   profiles,
+  swipedIds = [],
   conversations,
   onNavigate,
   onOpenChat,
-  onLikeProfile,
+  onInspectProfileInDeck,
   onTriggerIncomingCall
 }) {
-  // Section 8 & FR-21: Sort profiles using compatibility score
-  const computeScore = (profile) => {
-    const sharedInterests = profile.interests.filter((i) =>
-      user.interests.includes(i)
-    ).length;
-    const sameGoal = profile.goal === user.goal ? 25 : 10;
-    const sameFaculty = profile.faculty === user.faculty ? 10 : 5;
-    return Math.min(98, 56 + sharedInterests * 12 + sameGoal + sameFaculty);
-  };
+  const [selectedGoalFilter, setSelectedGoalFilter] = useState('Semua');
 
+  // Filter out already swiped profiles and sort using unified calculateMatchScore
   const topPicks = [...profiles]
+    .filter((p) => !swipedIds.includes(p.id))
+    .filter((p) =>
+      selectedGoalFilter === 'Semua' ? true : p.goal === selectedGoalFilter
+    )
     .map((p) => ({
       ...p,
-      matchScore: computeScore(p),
+      matchScore: calculateMatchScore(user, p),
       sharedInterests: p.interests.filter((i) => user.interests.includes(i))
     }))
     .sort((a, b) => b.matchScore - a.matchScore)
@@ -46,20 +46,20 @@ export default function HomeScreen({
     : null;
 
   return (
-    <div className="flex flex-col h-full bg-[#0A0A0E] text-white overflow-y-auto no-scrollbar px-5 pt-5 pb-4 space-y-5">
+    <div className="flex flex-col h-full bg-[#0F1115] text-white overflow-y-auto no-scrollbar px-5 pt-5 pb-4 space-y-5">
       {/* Top Bar: Logo, User Greeting & Incoming Call Trigger */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
-          <div className="relative">
+          <div className="relative shrink-0">
             <img
               src={user.avatar}
               alt={user.name}
-              className="w-11 h-11 rounded-full object-cover border-2 border-[#FF4D8D]"
+              className="w-11 h-11 rounded-full object-cover border-2 border-[#F59E0B]"
             />
             <img
               src="/beemate-logo.png"
               alt="BeeMate"
-              className="w-4 h-4 rounded-full bg-black absolute -bottom-0.5 -right-0.5 border border-[#FF4D8D]"
+              className="w-4 h-4 rounded-full bg-[#0F1115] object-contain absolute -bottom-0.5 -right-0.5 border border-[#F59E0B]"
             />
           </div>
           <div>
@@ -68,76 +68,102 @@ export default function HomeScreen({
                 Hai, {user.name.split(' ')[0]}!
               </h1>
               {user.verified && (
-                <BadgeCheck size={15} className="text-[#FF4D8D]" />
+                <BadgeCheck
+                  size={16}
+                  className="text-[#38BDF8] shrink-0"
+                  title="Verified Binusian"
+                />
               )}
             </div>
-            <p className="text-[11px] text-[#9494A8]">
-              {user.major} · &lsquo;{user.batch.slice(-2)}
-            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-xs font-semibold text-[#38BDF8]">
+                {user.major}
+              </span>
+              <span className="text-xs text-[#94A3B8]">
+                {user.hideBatch ? '· Angkatan Disembunyikan' : `· Binusian '${user.batch.slice(-2)}`}
+              </span>
+            </div>
           </div>
         </div>
 
         <button
           type="button"
           onClick={onTriggerIncomingCall}
-          title="Simulasi Panggilan Video Masuk"
-          className="w-10 h-10 rounded-full bg-[#15151E] hover:bg-[#FF4D8D] text-[#FF85B3] hover:text-[#0A0A0E] border border-[#2A2A3A] flex items-center justify-center transition cursor-pointer"
+          title="Simulasi Panggilan Masuk (Khusus Partner Streak 3+ Hari)"
+          className="w-10 h-10 rounded-full bg-[#181B22] hover:bg-[#F59E0B] text-[#F59E0B] hover:text-[#0F1115] border border-[#2E3440] flex items-center justify-center transition cursor-pointer shrink-0"
         >
           <PhoneIncoming size={17} />
         </button>
       </div>
 
-      {/* Bento Hero Banner (Inspired by Reference UI Top-Right Card with 4-point star & tilted photos) */}
-      <div className="relative rounded-4xl bg-gradient-to-br from-[#1E1E2A] via-[#15151E] to-[#0A0A0E] border border-[#2A2A3A] p-5 overflow-hidden shadow-xl">
-        {/* Decorative 4-point Pink Star */}
-        <svg
-          viewBox="0 0 24 24"
-          className="w-12 h-12 text-[#FF4D8D]/25 absolute top-3 right-3 rotate-12 pointer-events-none"
-          fill="currentColor"
-        >
-          <path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z" />
-        </svg>
+      {/* Hero Academic Networking Banner */}
+      <div className="relative shrink-0 rounded-4xl bg-gradient-to-br from-[#222631] via-[#181B22] to-[#0F1115] border border-[#2E3440] p-5 overflow-hidden shadow-xl space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider">
+            Target Kolaborasi:
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F59E0B] text-[#0F1115] text-[11px] font-extrabold uppercase tracking-wider">
+            <Target size={12} />
+            <span>{user.goal}</span>
+          </span>
+        </div>
 
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FF4D8D] text-[#0A0A0E] text-[10px] font-extrabold uppercase tracking-wider -rotate-1">
-          <Sparkles size={11} />
-          <span>{user.goal}</span>
-        </span>
-
-        <h2 className="font-display text-lg font-extrabold mt-2.5 leading-snug max-w-[230px]">
-          Temukan partner <span className="text-[#FF4D8D]">Binusian</span> paling cocok hari ini!
+        <h2 className="font-display text-base font-extrabold leading-snug text-white">
+          Bangun tim lomba, riset, & diskusi lintas fakultas bersama <span className="text-[#38BDF8]">Binusian</span> terverifikasi.
         </h2>
 
-        {/* Shortcut Pill Buttons (FR-20) */}
-        <div className="flex items-center gap-2.5 mt-4">
+        {/* Interactive Goal Filter Chips */}
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
+          {GOALS.map((g) => {
+            const active = selectedGoalFilter === g;
+            return (
+              <button
+                key={g}
+                type="button"
+                onClick={() => setSelectedGoalFilter(g)}
+                className={`px-3 py-1.5 rounded-full text-[11px] font-extrabold shrink-0 transition cursor-pointer ${
+                  active
+                    ? 'bg-[#F59E0B] text-[#0F1115]'
+                    : 'bg-[#0F1115]/80 text-[#94A3B8] border border-[#2E3440] hover:text-white'
+                }`}
+              >
+                {g === 'Semua' ? 'Semua Tujuan' : g}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Shortcut Pill Buttons */}
+        <div className="flex items-center gap-2.5 pt-1">
           <button
             type="button"
             onClick={() => onNavigate('matching')}
-            className="flex-1 py-3 px-4 rounded-full bg-[#FF4D8D] hover:bg-[#FF85B3] text-[#0A0A0E] font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#FF4D8D]/30 transition cursor-pointer"
+            className="flex-1 py-3 px-4 rounded-full bg-[#F59E0B] hover:bg-[#FBBF24] text-[#0F1115] font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#F59E0B]/25 transition cursor-pointer"
           >
             <Compass size={16} />
-            <span>Mulai Swipe</span>
+            <span>Buka Swipe Deck</span>
           </button>
           <button
             type="button"
             onClick={() => onNavigate('messages')}
-            className="py-3 px-4 rounded-full bg-[#0A0A0E] hover:bg-[#1E1E2A] text-white border border-[#2A2A3A] font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+            className="py-3 px-4 rounded-full bg-[#0F1115] hover:bg-[#222631] text-white border border-[#2E3440] font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
           >
-            <MessageCircle size={15} className="text-[#FF4D8D]" />
-            <span>{conversations.length} Match</span>
+            <MessageCircle size={15} className="text-[#F59E0B]" />
+            <span>{conversations.length} Koneksi</span>
           </button>
         </div>
       </div>
 
-      {/* Last Conversation Pill Card (FR-20 / FR-23) */}
-      <div className="space-y-2">
+      {/* Last Conversation Pill Card */}
+      <div className="space-y-2 shrink-0">
         <div className="flex items-center justify-between px-1">
-          <span className="text-xs font-extrabold text-[#9494A8] uppercase tracking-wider">
+          <span className="text-xs font-extrabold text-[#94A3B8] uppercase tracking-wider">
             Lanjutkan Diskusi
           </span>
           <button
             type="button"
             onClick={() => onNavigate('messages')}
-            className="text-[11px] font-bold text-[#FF85B3] hover:underline"
+            className="text-xs font-bold text-[#F59E0B] hover:underline cursor-pointer"
           >
             Semua Chat
           </button>
@@ -146,102 +172,130 @@ export default function HomeScreen({
         {lastConv && lastPartner ? (
           <div
             onClick={() => onOpenChat(lastConv.id)}
-            className="bg-[#15151E] hover:bg-[#1E1E2A] border border-[#2A2A3A] rounded-4xl p-3.5 flex items-center gap-3.5 transition cursor-pointer"
+            className="bg-[#181B22] hover:bg-[#222631] border border-[#2E3440] rounded-4xl p-3.5 flex items-center gap-3.5 transition cursor-pointer"
           >
             <img
               src={lastPartner.avatar}
               alt={lastPartner.name}
-              className="w-12 h-12 rounded-full object-cover border-2 border-[#FF4D8D]"
+              className="w-12 h-12 rounded-full object-cover border-2 border-[#38BDF8] shrink-0"
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <h3 className="text-xs font-extrabold text-white truncate">
                   {lastPartner.name}
                 </h3>
+                <BadgeCheck size={14} className="text-[#38BDF8] shrink-0" />
                 <StreakBadge
                   days={lastConv.streakDays}
                   expiringSoon={lastConv.streakExpiringSoon}
                 />
               </div>
-              <p className="text-[11px] text-[#9494A8] truncate mt-0.5">
+              <p className="text-xs text-[#94A3B8] truncate mt-0.5">
                 {lastConv.messages[lastConv.messages.length - 1]?.text}
               </p>
             </div>
-            <div className="w-8 h-8 rounded-full bg-[#FF4D8D] text-[#0A0A0E] flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-full bg-[#F59E0B] text-[#0F1115] flex items-center justify-center shrink-0">
               <ArrowRight size={15} />
             </div>
           </div>
         ) : (
-          <div className="bg-[#15151E] border border-dashed border-[#2A2A3A] rounded-4xl p-4 text-center space-y-2">
-            <p className="text-xs text-[#9494A8]">
-              Belum ada match, mulai jelajah sekarang!
+          <div className="bg-[#181B22] border border-dashed border-[#2E3440] rounded-4xl p-4 text-center space-y-2">
+            <p className="text-xs text-[#94A3B8]">
+              Belum ada percakapan aktif, mulai jelajah rekan di Swipe Deck!
             </p>
           </div>
         )}
       </div>
 
-      {/* Top Picks Bento Grid (FR-19 & FR-21: Ranked by Match Score, Reference UI 94% Pill Badge!) */}
-      <div className="space-y-3">
+      {/* Top Picks Bento Grid — Academic Collaboration Cards (No Instant Match Bypass!) */}
+      <div className="space-y-3 shrink-0 pb-2">
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-xs font-extrabold text-[#9494A8] uppercase tracking-wider">
-            Rekomendasi Teratas Hari Ini
+          <h2 className="text-xs font-extrabold text-[#94A3B8] uppercase tracking-wider">
+            Rekomendasi Kolaborator Hari Ini
           </h2>
-          <span className="text-[10px] font-bold text-[#FF85B3]">
-            Skor Kecocokan
+          <span className="text-[11px] font-bold text-[#F59E0B]">
+            Kecocokan Akademik
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          {topPicks.map((profile, idx) => (
-            <div
-              key={profile.id}
-              className="group relative bg-[#15151E] border border-[#2A2A3A] rounded-4xl overflow-hidden flex flex-col justify-between p-3 h-60 shadow-lg"
-            >
-              <img
-                src={profile.avatar}
-                alt={profile.name}
-                className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition duration-500"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0E] via-[#0A0A0E]/30 to-transparent" />
+        {topPicks.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3">
+            {topPicks.map((profile) => (
+              <div
+                key={profile.id}
+                onClick={() => onInspectProfileInDeck(profile.id)}
+                className="group relative bg-[#181B22] border border-[#2E3440] hover:border-[#F59E0B]/60 rounded-3xl overflow-hidden flex flex-col justify-between shadow-lg cursor-pointer transition"
+              >
+                {/* Top Photo + Score Header */}
+                <div className="relative h-32 w-full overflow-hidden">
+                  <img
+                    src={profile.avatar}
+                    alt={profile.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#181B22] via-transparent to-black/40" />
 
-              {/* Top Floating Match Percentage Pill (Just like Reference Image "♡ 94%"!) */}
-              <div className="relative z-10 flex justify-between items-start">
-                <span
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FF4D8D] text-[#0A0A0E] text-[10px] font-extrabold shadow-md ${
-                    idx % 2 === 0 ? '-rotate-3' : 'rotate-3'
-                  }`}
-                >
-                  <Heart size={10} className="fill-[#0A0A0E]" />
-                  <span>{profile.matchScore}%</span>
-                </span>
-              </div>
-
-              {/* Bottom Info & Quick Like */}
-              <div className="relative z-10 space-y-2">
-                <div>
-                  <div className="flex items-center gap-1">
-                    <h3 className="font-display font-extrabold text-xs text-white truncate">
-                      {profile.name.split(' ')[0]}, &lsquo;{profile.batch.slice(-2)}
-                    </h3>
-                    <BadgeCheck size={13} className="text-[#FF4D8D] shrink-0" />
+                  {/* Match Score Badge — Amber with --on-primary text, NO random rotation */}
+                  <div className="absolute top-2.5 left-2.5 right-2.5 flex justify-between items-center">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#F59E0B] text-[#0F1115] text-[11px] font-extrabold shadow">
+                      <Zap size={11} className="fill-[#0F1115]" />
+                      <span>{profile.matchScore}%</span>
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full bg-black/75 border border-[#38BDF8]/40 text-[#38BDF8] text-[11px] font-bold">
+                      &lsquo;{profile.batch.slice(-2)}
+                    </span>
                   </div>
-                  <p className="text-[10px] text-[#FF85B3] font-semibold truncate">
-                    {profile.major}
-                  </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => onLikeProfile(profile)}
-                  className="w-full py-2 rounded-full bg-white/15 hover:bg-[#FF4D8D] text-white hover:text-[#0A0A0E] backdrop-blur-md text-[11px] font-extrabold transition flex items-center justify-center gap-1 cursor-pointer"
-                >
-                  <Heart size={12} className="fill-current" />
-                  <span>Match</span>
-                </button>
+                {/* Bottom Structured Academic Info */}
+                <div className="p-3 space-y-2 flex-1 flex flex-col justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1">
+                      <h3 className="font-display font-extrabold text-xs text-white truncate">
+                        {profile.name}
+                      </h3>
+                      <BadgeCheck size={14} className="text-[#38BDF8] shrink-0" />
+                    </div>
+                    <p className="text-[11px] text-[#38BDF8] font-bold truncate">
+                      {profile.major}
+                    </p>
+                    <div className="p-2 rounded-xl bg-[#0F1115] border border-[#2E3440] mt-1">
+                      <span className="flex items-center gap-1 text-[11px] text-[#94A3B8] font-medium truncate">
+                        <BookOpen size={11} className="text-[#F59E0B] shrink-0" />
+                        <span className="truncate text-white/90">{profile.promptAnswer}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onInspectProfileInDeck(profile.id);
+                    }}
+                    className="w-full py-2 rounded-full bg-[#F59E0B] hover:bg-[#FBBF24] text-[#0F1115] text-[11px] font-extrabold transition flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <Compass size={12} />
+                    <span>Tinjau di Deck</span>
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-[#181B22] border border-[#2E3440] rounded-3xl p-5 text-center space-y-2">
+            <p className="text-xs text-[#94A3B8]">
+              Semua rekomendasi untuk filter ini sudah kamu tinjau di Swipe Deck.
+            </p>
+            <button
+              type="button"
+              onClick={() => onNavigate('matching')}
+              className="px-4 py-2 rounded-full bg-[#F59E0B] text-[#0F1115] text-xs font-extrabold cursor-pointer"
+            >
+              Ke Layar Explore
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

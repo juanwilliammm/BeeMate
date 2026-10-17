@@ -8,15 +8,16 @@ export default {
     extend: {
       colors: {
         bee: {
-          black: '#0A0A0E',
-          card: '#15151E',
-          elevated: '#1E1E2A',
-          border: '#2A2A3A',
-          pink: '#FF4D8D',
-          pinkLight: '#FF85B3',
-          pinkSoft: '#FF6B9E',
-          pinkDark: '#D92B6B',
-          muted: '#9494A8'
+          black: '#0F1115',
+          card: '#181B22',
+          elevated: '#222631',
+          border: '#2E3440',
+          amber: '#F59E0B',
+          amberLight: '#FBBF24',
+          onPrimary: '#0F1115',
+          blue: '#38BDF8',
+          blueDeep: '#0284C7',
+          muted: '#94A3B8'
         }
       },
       fontFamily: {

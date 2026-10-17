@@ -1,25 +1,35 @@
+export const FACULTY_MAJORS_MAP = {
+  'School of Computer Science': [
+    'Computer Science',
+    'Information Systems',
+    'Data Science',
+    'Cyber Security'
+  ],
+  'Binus Business School': [
+    'Management',
+    'Digital Business Innovation'
+  ],
+  'School of Design': [
+    'Visual Communication Design',
+    'Interior Design'
+  ],
+  'Faculty of Engineering': [
+    'Industrial Engineering'
+  ],
+  'Faculty of Humanities': [
+    'Psychology',
+    'International Relations'
+  ]
+};
+
 export const FACULTIES = [
   'Semua',
-  'School of Computer Science',
-  'Binus Business School',
-  'School of Design',
-  'Faculty of Engineering',
-  'Faculty of Humanities'
+  ...Object.keys(FACULTY_MAJORS_MAP)
 ];
 
 export const MAJORS = [
   'Semua',
-  'Computer Science',
-  'Information Systems',
-  'Data Science',
-  'Cyber Security',
-  'Management',
-  'Digital Business Innovation',
-  'Visual Communication Design',
-  'Interior Design',
-  'Industrial Engineering',
-  'Psychology',
-  'International Relations'
+  ...Object.values(FACULTY_MAJORS_MAP).flat()
 ];
 
 export const BATCHES = ['Semua', '2023', '2024', '2025', '2026'];
@@ -50,6 +60,41 @@ export const INTERESTS_LIST = [
   'Riset Akademik'
 ];
 
+// Single source of truth for Match Compatibility Score across Home & Matching screens
+export function calculateMatchScore(user, candidate) {
+  if (!user || !candidate) return 75;
+  const userInterests = user.interests || [];
+  const candidateInterests = candidate.interests || [];
+  const sharedCount = candidateInterests.filter((i) =>
+    userInterests.includes(i)
+  ).length;
+  const sameGoalBonus = candidate.goal === user.goal ? 25 : 8;
+  const sameFacultyBonus = candidate.faculty === user.faculty ? 10 : 5;
+  const baseScore = 32;
+  return Math.min(98, baseScore + sharedCount * 14 + sameGoalBonus + sameFacultyBonus);
+}
+
+// Contextual auto-reply generator based on partner profile
+export function generatePartnerReply(partner, userMessage = '') {
+  if (!partner) {
+    return 'Siap! Yuk kita jadwalkan waktu buat diskusi bareng di kampus.';
+  }
+  const lower = userMessage.toLowerCase();
+  if (lower.includes('jadwal') || lower.includes('kapan') || lower.includes('diskusi')) {
+    return `Boleh banget! Aku biasanya di kampus ${partner.campus || 'Anggrek'} sekitar jam 1 siang habis kelas ${partner.major}. Kita ketemu di library atau coworking space yuk?`;
+  }
+  if (lower.includes('lomba') || lower.includes('tim') || lower.includes('kompetisi') || lower.includes('kolab')) {
+    return `Pas banget! Kebetulan fokusku sekarang "${partner.promptAnswer}". Kalau kita gabungin skill kita buat ${partner.goal.toLowerCase()}, pasti solid banget timnya!`;
+  }
+  const replies = [
+    `Halo! Senang bisa terhubung. Aku lihat kita punya ketertarikan yang nyambung buat ${partner.goal.toLowerCase()}. Lagi fokus proyek atau mata kuliah apa semester ini?`,
+    `Setuju banget! Kebetulan aku lagi mendalami "${partner.promptAnswer}" di ${partner.major}. Kapan-kapan kita bahas bareng di ${partner.campus} yuk!`,
+    `Mantap! Aku simpan catatannya ya. Kalau ada draf ide atau repo/Figma yang mau dibahas bareng, kabari aja!`
+  ];
+  const idx = (userMessage.length + partner.name.length) % replies.length;
+  return replies[idx];
+}
+
 export const INITIAL_USER = {
   name: 'Rafi Pratama',
   email: 'rafi.pratama@binus.ac.id',
@@ -58,10 +103,13 @@ export const INITIAL_USER = {
   faculty: 'School of Computer Science',
   batch: '2024',
   graduationYear: '2028',
+  campus: 'Kemanggisan (Anggrek)',
   verified: true,
   verificationStatus: 'Disetujui', // 'Menunggu' | 'Disetujui' | 'Ditolak'
   bio: 'Suka eksplor front-end development dan lagi nyari tim buat lomba GEMASTIK & Hackathon tahun ini. Ayo diskusi bareng di Perpus Anggrek!',
   goal: 'Cari partner lomba',
+  promptQuestion: 'Target kolaborasi semester ini',
+  promptAnswer: 'Lolos final GEMASTIK divisi Pengembangan Perangkat Lunak',
   interests: ['Web Development', 'UI/UX Design', 'Hackathon', 'Mobile App'],
   avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80',
   dndMode: false,
@@ -74,7 +122,6 @@ export const MOCK_PROFILES = [
   {
     id: 'p1',
     name: 'Nadya Kusuma',
-    nim: '2801928371',
     faculty: 'School of Design',
     major: 'Visual Communication Design',
     batch: '2024',
@@ -86,13 +133,13 @@ export const MOCK_PROFILES = [
     avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop&q=80',
     likedMe: true,
     online: true,
-    promptQuestion: 'Topik kuliah yang paling kamu suka',
-    promptAnswer: 'Interactive Media Design & Design Thinking'
+    promptQuestion: 'Topik kuliah & riset favorit',
+    promptAnswer: 'Interactive Media Design & Design Thinking untuk Smart Campus',
+    portfolioTag: 'Juara 2 UI/UX Design Challenge 2025'
   },
   {
     id: 'p2',
     name: 'Kevin Wijaya',
-    nim: '2805518290',
     faculty: 'Binus Business School',
     major: 'Digital Business Innovation',
     batch: '2024',
@@ -105,12 +152,12 @@ export const MOCK_PROFILES = [
     likedMe: true,
     online: true,
     promptQuestion: 'Proyek impian selama di Binus',
-    promptAnswer: 'Bikin EdTech startup bareng anak SoCS & DKV!'
+    promptAnswer: 'Bikin EdTech startup bareng anak SoCS & DKV!',
+    portfolioTag: 'Finalis National Business Plan Competition'
   },
   {
     id: 'p3',
     name: 'Alya Putri Maharani',
-    nim: '2901827364',
     faculty: 'School of Computer Science',
     major: 'Data Science',
     batch: '2025',
@@ -122,13 +169,13 @@ export const MOCK_PROFILES = [
     avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&auto=format&fit=crop&q=80',
     likedMe: true,
     online: false,
-    promptQuestion: 'Spot belajar favorit di kampus',
-    promptAnswer: 'Lantai 4 Library Anggrek dekat jendela'
+    promptQuestion: 'Spot belajar & fokus diskusi',
+    promptAnswer: 'Lantai 4 Library Anggrek — Bedah dataset Kaggle & NLP',
+    portfolioTag: 'Asisten Lab Algoritma & Pemrograman'
   },
   {
     id: 'p4',
     name: 'Bima Sakti Nugroho',
-    nim: '2709182736',
     faculty: 'School of Computer Science',
     major: 'Cyber Security',
     batch: '2023',
@@ -141,43 +188,44 @@ export const MOCK_PROFILES = [
     likedMe: false,
     online: true,
     promptQuestion: 'Topik kuliah yang paling kamu suka',
-    promptAnswer: 'Ethical Hacking & Penetration Testing'
+    promptAnswer: 'Ethical Hacking, Penetration Testing & DevSecOps',
+    portfolioTag: 'Top 10 Nasional Capture The Flag (CTF)'
   },
   {
     id: 'p5',
     name: 'Clarissa Tan',
-    nim: '3001928345',
     faculty: 'Faculty of Humanities',
     major: 'Psychology',
     batch: '2026',
     verified: true,
     campus: 'Kemanggisan (Kijang)',
     goal: 'Kolaborasi organisasi',
-    bio: 'Maba Psikologi 2026! Pengen kenal teman lintas jurusan buat kepanitiaan event kampus dan riset perilaku pengguna aplikasi.',
+    bio: 'Mahasiswa Psikologi 2026! Pengen kenal teman lintas jurusan buat kepanitiaan event kampus dan UX Research perilaku pengguna.',
     interests: ['UI/UX Design', 'Public Speaking', 'Riset Akademik', 'Musik & Band'],
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&auto=format&fit=crop&q=80',
     likedMe: true,
     online: true,
     promptQuestion: 'Alasan gabung BeeMate',
-    promptAnswer: 'Pengen punya teman dari luar jurusan Psikologi!'
+    promptAnswer: 'Kolaborasi riset psikologi kognitif & UX dengan anak IT/Desain!',
+    portfolioTag: 'Koordinator Divisi Acara Himpunan Mahasiswa'
   },
   {
     id: 'p6',
     name: 'Dionisius Hendra',
-    nim: '2803948571',
     faculty: 'Faculty of Engineering',
     major: 'Industrial Engineering',
     batch: '2024',
     verified: true,
     campus: 'Bekasi',
     goal: 'Sekadar ngobrol',
-    bio: 'Tertarik sama supply chain, optimasi sistem, dan manajemen produk. Kapan saja siap diajak ngopi sambil bahas prospek magang.',
+    bio: 'Tertarik sama supply chain, optimasi sistem, dan manajemen produk. Kapan saja siap diajak diskusi sambil bahas persiapan magang.',
     interests: ['Data Analytics', 'Business Case', 'Mobile App', 'Fotografi'],
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&auto=format&fit=crop&q=80',
     likedMe: true,
     online: false,
     promptQuestion: 'Topik kuliah yang paling kamu suka',
-    promptAnswer: 'System Simulation & Engineering Economy'
+    promptAnswer: 'System Simulation, Operations Research & Product Management',
+    portfolioTag: 'Product Management Intern Cohort'
   }
 ];
 
@@ -187,6 +235,9 @@ export const INITIAL_CONVERSATIONS = [
     partnerId: 'p1',
     streakDays: 4, // >= 3 days -> Video Call Unlocked!
     streakExpiringSoon: false,
+    sentByMeToday: true,
+    sentByPartnerToday: true,
+    streakIncrementedToday: true,
     unreadCount: 1,
     lastUpdated: '19:45',
     icebreakers: [
@@ -237,6 +288,9 @@ export const INITIAL_CONVERSATIONS = [
     partnerId: 'p2',
     streakDays: 2, // < 3 days -> Video Call Locked (Sisa 1 hari)
     streakExpiringSoon: true, // Shows hourglass icon (FR-56)
+    sentByMeToday: false,
+    sentByPartnerToday: false,
+    streakIncrementedToday: false,
     unreadCount: 0,
     lastUpdated: 'Kemarin',
     icebreakers: [
@@ -265,6 +319,9 @@ export const INITIAL_CONVERSATIONS = [
     partnerId: 'p3',
     streakDays: 0, // New match, no messages yet (FR-31)
     streakExpiringSoon: false,
+    sentByMeToday: false,
+    sentByPartnerToday: false,
+    streakIncrementedToday: false,
     unreadCount: 0,
     lastUpdated: 'Baru saja',
     icebreakers: [

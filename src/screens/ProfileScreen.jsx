@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   BadgeCheck,
   Edit3,
@@ -11,9 +11,13 @@ import {
   CheckCircle2,
   Moon,
   Plus,
-  Sparkles
+  Target,
+  BookOpen,
+  X
 } from 'lucide-react';
-import { GOALS, INTERESTS_LIST, MAJORS } from '../data/mockData';
+import { GOALS, INTERESTS_LIST, FACULTY_MAJORS_MAP } from '../data/mockData';
+
+const FACULTY_LIST = Object.keys(FACULTY_MAJORS_MAP);
 
 export default function ProfileScreen({
   user,
@@ -24,13 +28,30 @@ export default function ProfileScreen({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user.name);
+  const [faculty, setFaculty] = useState(user.faculty || FACULTY_LIST[0]);
   const [major, setMajor] = useState(user.major);
-  const [batch, setBatch] = useState(user.batch);
   const [bio, setBio] = useState(user.bio);
   const [goal, setGoal] = useState(user.goal);
+  const [promptAnswer, setPromptAnswer] = useState(
+    user.promptAnswer || 'Lolos final GEMASTIK divisi Pengembangan Perangkat Lunak'
+  );
   const [interests, setInterests] = useState(user.interests);
+  const [extraPhotos, setExtraPhotos] = useState(user.extraPhotos || [null, null, null]);
+  const [activeSlotIdx, setActiveSlotIdx] = useState(0);
   const [confirmDeleteModal, setConfirmDeleteModal] = useState(false);
   const [savedBanner, setSavedBanner] = useState(false);
+
+  const slotInputRef = useRef(null);
+
+  const availableMajors = FACULTY_MAJORS_MAP[faculty] || [];
+
+  const handleFacultyChange = (newFac) => {
+    setFaculty(newFac);
+    const list = FACULTY_MAJORS_MAP[newFac] || [];
+    if (!list.includes(major)) {
+      setMajor(list[0] || '');
+    }
+  };
 
   const activeStreaksCount = conversations.filter((c) => c.streakDays >= 3).length;
   const highestStreak = conversations.reduce(
@@ -48,14 +69,48 @@ export default function ProfileScreen({
     }
   };
 
+  const handleTriggerPhotoSlot = (slotIdx) => {
+    setActiveSlotIdx(slotIdx);
+    slotInputRef.current?.click();
+  };
+
+  const handlePhotoSlotPicked = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const url = ev.target?.result;
+      if (typeof url === 'string') {
+        if (activeSlotIdx === -1) {
+          onUpdateUser({ avatar: url });
+        } else {
+          const next = [...extraPhotos];
+          next[activeSlotIdx] = url;
+          setExtraPhotos(next);
+          onUpdateUser({ extraPhotos: next });
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveExtraPhoto = (idx, e) => {
+    e.stopPropagation();
+    const next = [...extraPhotos];
+    next[idx] = null;
+    setExtraPhotos(next);
+    onUpdateUser({ extraPhotos: next });
+  };
+
   const handleSaveProfile = (e) => {
     e.preventDefault();
     onUpdateUser({
       name,
+      faculty,
       major,
-      batch,
       bio,
       goal,
+      promptAnswer,
       interests
     });
     setIsEditing(false);
@@ -64,99 +119,139 @@ export default function ProfileScreen({
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#0A0A0E] text-white overflow-y-auto no-scrollbar px-5 pt-5 pb-4 space-y-4">
+    <div className="flex flex-col h-full bg-[#0F1115] text-white overflow-y-auto no-scrollbar px-5 pt-5 pb-4 space-y-4">
+      {/* Hidden File Input for Adding Profile Photos */}
+      <input
+        ref={slotInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handlePhotoSlotPicked}
+        className="hidden"
+      />
+
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-xl font-extrabold">
-          Profil <span className="text-[#FF4D8D]">Binusian</span>
+      <div className="flex items-center justify-between shrink-0">
+        <h1 className="font-display text-xl font-extrabold text-white">
+          Profil <span className="text-[#F59E0B]">Akademik</span>
         </h1>
         <button
           type="button"
           onClick={() => setIsEditing(!isEditing)}
-          className="px-4 py-1.5 rounded-full bg-[#15151E] hover:bg-[#FF4D8D] text-white hover:text-[#0A0A0E] border border-[#2A2A3A] text-xs font-extrabold inline-flex items-center gap-1.5 transition cursor-pointer"
+          className={`px-4 py-1.5 rounded-full text-xs font-extrabold inline-flex items-center gap-1.5 transition cursor-pointer ${
+            isEditing
+              ? 'bg-[#F59E0B] text-[#0F1115]'
+              : 'bg-[#181B22] hover:bg-[#F59E0B] text-white hover:text-[#0F1115] border border-[#2E3440]'
+          }`}
         >
           <Edit3 size={13} />
-          <span>{isEditing ? 'Selesai' : 'Edit Profil'}</span>
+          <span>{isEditing ? 'Tutup Edit' : 'Edit Profil'}</span>
         </button>
       </div>
 
       {savedBanner && (
-        <div className="p-3 rounded-3xl bg-[#FF4D8D]/20 border border-[#FF4D8D] text-white text-xs flex items-center gap-2">
-          <CheckCircle2 size={15} className="text-[#FF4D8D]" />
-          <span>Profil berhasil diperbarui!</span>
+        <div className="p-3 rounded-3xl bg-[#F59E0B]/20 border border-[#F59E0B] text-white text-xs flex items-center gap-2 shrink-0">
+          <CheckCircle2 size={15} className="text-[#F59E0B]" />
+          <span>Perubahan profil tersimpan otomatis!</span>
         </div>
       )}
 
-      {/* Bento Profile Card (Inspired by Reference Center-Left Form & Photo Slots Card!) */}
-      <div className="bg-[#15151E] border border-[#2A2A3A] rounded-4xl p-4 space-y-4">
-        {/* Photo Slots Row like Reference UI */}
+      {/* Bento Profile Card: 1 Main Photo + Three "+" Slots */}
+      <div className="bg-[#181B22] border border-[#2E3440] rounded-4xl p-4 space-y-4 shrink-0">
         <div className="grid grid-cols-4 gap-2">
-          <div className="relative h-20 rounded-2xl overflow-hidden border-2 border-[#FF4D8D]">
+          {/* Slot 1: Main Profile Photo */}
+          <div
+            onClick={() => handleTriggerPhotoSlot(-1)}
+            title="Klik untuk ganti foto utama"
+            className="relative h-20 rounded-2xl overflow-hidden border-2 border-[#F59E0B] cursor-pointer group"
+          >
             <img
               src={user.avatar}
               alt={user.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover group-hover:scale-105 transition"
             />
           </div>
-          <div className="relative h-20 rounded-2xl overflow-hidden bg-[#1E1E2A] border border-[#2A2A3A] flex items-center justify-center">
-            <img
-              src="/beemate-logo.png"
-              alt="BeeMate"
-              className="w-12 h-12 object-contain"
-            />
-          </div>
-          <div className="h-20 rounded-2xl bg-[#1E1E2A] border border-dashed border-[#2A2A3A] flex items-center justify-center text-[#9494A8]">
-            <Plus size={18} />
-          </div>
-          <div className="h-20 rounded-2xl bg-[#1E1E2A] border border-dashed border-[#2A2A3A] flex items-center justify-center text-[#9494A8]">
-            <Plus size={18} />
-          </div>
+
+          {/* Slots 2, 3, 4: "+" Photo Upload Slots */}
+          {extraPhotos.map((photoUrl, idx) => (
+            <div
+              key={idx}
+              onClick={() => handleTriggerPhotoSlot(idx)}
+              className="relative h-20 rounded-2xl bg-[#222631] hover:bg-[#2E3440] border border-dashed border-[#2E3440] hover:border-[#F59E0B] flex items-center justify-center text-[#94A3B8] hover:text-[#F59E0B] cursor-pointer overflow-hidden transition"
+            >
+              {photoUrl ? (
+                <>
+                  <img
+                    src={photoUrl}
+                    alt={`Foto ${idx + 2}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => handleRemoveExtraPhoto(idx, e)}
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/75 text-white flex items-center justify-center"
+                  >
+                    <X size={11} />
+                  </button>
+                </>
+              ) : (
+                <Plus size={18} />
+              )}
+            </div>
+          ))}
         </div>
 
-        {/* Identity Pill Box */}
-        <div className="bg-[#1E1E2A] border border-[#2A2A3A] rounded-3xl p-3.5 flex items-center justify-between">
-          <div>
+        {/* Identity Pill Box — Academic Blue strictly for Verified Campus / Faculty / Batch */}
+        <div className="bg-[#222631] border border-[#2E3440] rounded-3xl p-3.5 flex items-center justify-between gap-2">
+          <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <h2 className="font-display font-extrabold text-sm text-white">
+              <h2 className="font-display font-extrabold text-sm text-white truncate">
                 {user.name}
               </h2>
               {user.verified && (
-                <BadgeCheck size={16} className="text-[#FF4D8D]" />
+                <BadgeCheck size={16} className="text-[#38BDF8] shrink-0" />
               )}
             </div>
-            <p className="text-xs text-[#FF85B3] font-semibold mt-0.5">
-              {user.major} {!user.hideBatch && `· Binusian ${user.batch}`}
+            <p className="text-xs text-[#38BDF8] font-bold mt-0.5 truncate">
+              {user.major}
             </p>
-            <p className="text-[10px] text-[#9494A8] font-mono mt-0.5">
-              NIM {user.nim}
+            <p className="text-[11px] text-[#94A3B8] mt-0.5">
+              {user.hideBatch
+                ? '🔒 Angkatan Disembunyikan dari Publik'
+                : `Binusian Angkatan ${user.batch} · ${user.email}`}
             </p>
           </div>
-          <span className="px-3 py-1 rounded-full bg-[#FF4D8D] text-[#0A0A0E] text-[10px] font-extrabold">
-            Verified
+          <span
+            className={`px-3 py-1 rounded-full text-[11px] font-extrabold shrink-0 ${
+              user.verified
+                ? 'bg-[#38BDF8]/15 text-[#38BDF8] border border-[#38BDF8]/40'
+                : 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/40'
+            }`}
+          >
+            {user.verificationStatus || 'Disetujui'}
           </span>
         </div>
 
-        {/* Statistics Row (FR-40) */}
+        {/* Statistics Row */}
         <div className="grid grid-cols-3 gap-2 text-center">
-          <div className="bg-[#0A0A0E] border border-[#2A2A3A] p-2.5 rounded-3xl">
-            <div className="flex items-center justify-center gap-1 text-[#FF4D8D] font-extrabold text-sm">
+          <div className="bg-[#0F1115] border border-[#2E3440] p-2.5 rounded-3xl">
+            <div className="flex items-center justify-center gap-1 text-[#38BDF8] font-extrabold text-sm">
               <Users size={14} />
               <span>{conversations.length}</span>
             </div>
-            <span className="text-[10px] text-[#9494A8] block mt-0.5">Match</span>
+            <span className="text-[11px] text-[#94A3B8] block mt-0.5">Koneksi</span>
           </div>
-          <div className="bg-[#0A0A0E] border border-[#2A2A3A] p-2.5 rounded-3xl">
-            <div className="flex items-center justify-center gap-1 text-[#FF85B3] font-extrabold text-sm">
-              <Flame size={14} />
+          <div className="bg-[#0F1115] border border-[#2E3440] p-2.5 rounded-3xl">
+            <div className="flex items-center justify-center gap-1 text-[#F59E0B] font-extrabold text-sm">
+              <Flame size={14} className="fill-[#F59E0B]" />
               <span>{activeStreaksCount}</span>
             </div>
-            <span className="text-[10px] text-[#9494A8] block mt-0.5">Streak 3+</span>
+            <span className="text-[11px] text-[#94A3B8] block mt-0.5">Streak 3+</span>
           </div>
-          <div className="bg-[#0A0A0E] border border-[#2A2A3A] p-2.5 rounded-3xl">
+          <div className="bg-[#0F1115] border border-[#2E3440] p-2.5 rounded-3xl">
             <span className="text-white font-extrabold text-sm block">
               {highestStreak} hr
             </span>
-            <span className="text-[10px] text-[#9494A8] block mt-0.5">Rekor</span>
+            <span className="text-[11px] text-[#94A3B8] block mt-0.5">Rekor</span>
           </div>
         </div>
       </div>
@@ -165,10 +260,10 @@ export default function ProfileScreen({
       {isEditing ? (
         <form
           onSubmit={handleSaveProfile}
-          className="bg-[#15151E] border border-[#2A2A3A] rounded-4xl p-4 space-y-3"
+          className="bg-[#181B22] border border-[#2E3440] rounded-4xl p-4 space-y-3 shrink-0"
         >
-          <div className="bg-[#1E1E2A] rounded-3xl px-4 py-2.5 border border-[#2A2A3A]">
-            <label className="block text-[10px] font-bold text-[#9494A8]">Nama Lengkap</label>
+          <div className="bg-[#222631] rounded-3xl px-4 py-2.5 border border-[#2E3440]">
+            <label className="block text-[11px] font-bold text-[#94A3B8]">Nama Lengkap</label>
             <input
               type="text"
               value={name}
@@ -177,25 +272,37 @@ export default function ProfileScreen({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-[#1E1E2A] rounded-3xl px-4 py-2.5 border border-[#2A2A3A]">
-              <label className="block text-[10px] font-bold text-[#9494A8]">Jurusan</label>
+          <div className="grid grid-cols-1 gap-2">
+            <div className="bg-[#222631] rounded-3xl px-4 py-2.5 border border-[#2E3440]">
+              <label className="block text-[11px] font-bold text-[#38BDF8]">Fakultas</label>
+              <select
+                value={faculty}
+                onChange={(e) => handleFacultyChange(e.target.value)}
+                className="w-full bg-[#222631] text-xs font-bold text-white mt-0.5 focus:outline-none"
+              >
+                {FACULTY_LIST.map((f) => (
+                  <option key={f} value={f}>{f}</option>
+                ))}
+              </select>
+            </div>
+            <div className="bg-[#222631] rounded-3xl px-4 py-2.5 border border-[#2E3440]">
+              <label className="block text-[11px] font-bold text-[#38BDF8]">Jurusan (Sesuai Fakultas)</label>
               <select
                 value={major}
                 onChange={(e) => setMajor(e.target.value)}
-                className="w-full bg-[#1E1E2A] text-xs font-bold text-white mt-0.5 focus:outline-none"
+                className="w-full bg-[#222631] text-xs font-bold text-white mt-0.5 focus:outline-none"
               >
-                {MAJORS.filter((m) => m !== 'Semua').map((m) => (
+                {availableMajors.map((m) => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </select>
             </div>
-            <div className="bg-[#1E1E2A] rounded-3xl px-4 py-2.5 border border-[#2A2A3A]">
-              <label className="block text-[10px] font-bold text-[#9494A8]">Tujuan</label>
+            <div className="bg-[#222631] rounded-3xl px-4 py-2.5 border border-[#2E3440]">
+              <label className="block text-[11px] font-bold text-[#94A3B8]">Tujuan Kolaborasi</label>
               <select
                 value={goal}
                 onChange={(e) => setGoal(e.target.value)}
-                className="w-full bg-[#1E1E2A] text-xs font-bold text-white mt-0.5 focus:outline-none"
+                className="w-full bg-[#222631] text-xs font-bold text-white mt-0.5 focus:outline-none"
               >
                 {GOALS.filter((g) => g !== 'Semua').map((g) => (
                   <option key={g} value={g}>{g}</option>
@@ -204,8 +311,20 @@ export default function ProfileScreen({
             </div>
           </div>
 
-          <div className="bg-[#1E1E2A] rounded-3xl px-4 py-2.5 border border-[#2A2A3A]">
-            <label className="block text-[10px] font-bold text-[#9494A8]">Bio Singkat</label>
+          <div className="bg-[#222631] rounded-3xl px-4 py-2.5 border border-[#2E3440]">
+            <label className="block text-[11px] font-bold text-[#38BDF8]">
+              Target Proyek / Kompetisi Semester Ini
+            </label>
+            <input
+              type="text"
+              value={promptAnswer}
+              onChange={(e) => setPromptAnswer(e.target.value)}
+              className="w-full bg-transparent text-xs font-semibold text-white mt-0.5 focus:outline-none"
+            />
+          </div>
+
+          <div className="bg-[#222631] rounded-3xl px-4 py-2.5 border border-[#2E3440]">
+            <label className="block text-[11px] font-bold text-[#94A3B8]">Bio Singkat</label>
             <textarea
               rows={2}
               value={bio}
@@ -215,8 +334,8 @@ export default function ProfileScreen({
           </div>
 
           <div className="space-y-2">
-            <label className="block text-[10px] font-bold text-[#9494A8] px-1">
-              Pilih Minat
+            <label className="block text-[11px] font-bold text-[#94A3B8] px-1">
+              Pilih Keahlian & Minat
             </label>
             <div className="flex flex-wrap gap-1.5">
               {INTERESTS_LIST.map((tag) => {
@@ -226,10 +345,10 @@ export default function ProfileScreen({
                     key={tag}
                     type="button"
                     onClick={() => toggleInterest(tag)}
-                    className={`px-3 py-1 rounded-full text-[11px] font-bold ${
+                    className={`px-3 py-1 rounded-full text-xs font-extrabold cursor-pointer ${
                       active
-                        ? 'bg-[#FF4D8D] text-[#0A0A0E]'
-                        : 'bg-[#1E1E2A] text-[#9494A8]'
+                        ? 'bg-[#F59E0B] text-[#0F1115]'
+                        : 'bg-[#222631] text-[#94A3B8]'
                     }`}
                   >
                     {tag}
@@ -241,28 +360,38 @@ export default function ProfileScreen({
 
           <button
             type="submit"
-            className="w-full py-3 rounded-full bg-[#FF4D8D] text-[#0A0A0E] text-xs font-extrabold cursor-pointer"
+            className="w-full py-3 rounded-full bg-[#F59E0B] hover:bg-[#FBBF24] text-[#0F1115] text-xs font-extrabold cursor-pointer"
           >
             Simpan Profil
           </button>
         </form>
       ) : (
-        <div className="bg-[#15151E] border border-[#2A2A3A] rounded-4xl p-4 space-y-3">
+        <div className="bg-[#181B22] border border-[#2E3440] rounded-4xl p-4 space-y-3 shrink-0">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold text-white">Tujuan & Minat</span>
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#FF4D8D]/15 text-[#FF85B3] border border-[#FF4D8D]/40 text-[11px] font-bold">
-              <Sparkles size={11} className="text-[#FF4D8D]" />
+            <span className="text-xs font-extrabold text-white">Fokus & Minat Akademik</span>
+            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#F59E0B] text-[#0F1115] text-[11px] font-extrabold">
+              <Target size={11} />
               <span>{user.goal}</span>
             </span>
           </div>
 
-          <p className="text-xs text-[#9494A8] leading-relaxed">{user.bio}</p>
+          <div className="p-3 rounded-2xl bg-[#0F1115] border border-[#2E3440] space-y-1">
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#38BDF8]">
+              <BookOpen size={12} />
+              <span>{user.promptQuestion || 'Target Kolaborasi Semester Ini'}</span>
+            </span>
+            <p className="text-xs font-bold text-white">
+              &ldquo;{user.promptAnswer || 'Lolos final GEMASTIK divisi Pengembangan Perangkat Lunak'}&rdquo;
+            </p>
+          </div>
+
+          <p className="text-xs text-[#94A3B8] leading-relaxed">{user.bio}</p>
 
           <div className="flex flex-wrap gap-1.5">
             {user.interests.map((tag) => (
               <span
                 key={tag}
-                className="px-3 py-1 rounded-full bg-[#1E1E2A] border border-[#2A2A3A] text-[#FF85B3] text-[11px] font-bold"
+                className="px-3 py-1 rounded-full bg-[#222631] border border-[#2E3440] text-white text-xs font-semibold"
               >
                 {tag}
               </span>
@@ -271,21 +400,21 @@ export default function ProfileScreen({
         </div>
       )}
 
-      {/* Privacy & Settings Card (FR-41, FR-51, FR-57) */}
-      <div className="bg-[#15151E] border border-[#2A2A3A] rounded-4xl p-4 space-y-3">
+      {/* Privacy & Settings Card */}
+      <div className="bg-[#181B22] border border-[#2E3440] rounded-4xl p-4 space-y-3 shrink-0">
         <span className="text-xs font-extrabold text-white block">
           Pengaturan & Privasi
         </span>
 
-        <label className="flex items-center justify-between p-3 rounded-3xl bg-[#1E1E2A] cursor-pointer">
+        <label className="flex items-center justify-between p-3 rounded-3xl bg-[#222631] cursor-pointer">
           <div className="flex items-center gap-2.5">
-            <Moon size={16} className="text-[#FF4D8D]" />
+            <Moon size={16} className="text-[#F59E0B]" />
             <div>
               <span className="text-xs font-bold text-white block">
-                Mode Jangan Ganggu
+                Mode Jangan Ganggu (DND)
               </span>
-              <span className="text-[10px] text-[#9494A8]">
-                Senyapkan panggilan masuk saat kuliah
+              <span className="text-[11px] text-[#94A3B8]">
+                Blokir layar panggilan masuk saat jam kuliah
               </span>
             </div>
           </div>
@@ -293,18 +422,18 @@ export default function ProfileScreen({
             type="checkbox"
             checked={user.dndMode}
             onChange={(e) => onUpdateUser({ dndMode: e.target.checked })}
-            className="w-4 h-4 accent-[#FF4D8D]"
+            className="w-4 h-4 accent-[#F59E0B]"
           />
         </label>
 
-        <label className="flex items-center justify-between p-3 rounded-3xl bg-[#1E1E2A] cursor-pointer">
+        <label className="flex items-center justify-between p-3 rounded-3xl bg-[#222631] cursor-pointer">
           <div className="flex items-center gap-2.5">
-            <Bell size={16} className="text-[#FF85B3]" />
+            <Bell size={16} className="text-[#F59E0B]" />
             <div>
               <span className="text-xs font-bold text-white block">
-                Pengingat Streak Chat
+                Pengingat Streak Diskusi
               </span>
-              <span className="text-[10px] text-[#9494A8]">
+              <span className="text-[11px] text-[#94A3B8]">
                 Notifikasi saat jam pasir muncul
               </span>
             </div>
@@ -313,18 +442,18 @@ export default function ProfileScreen({
             type="checkbox"
             checked={user.streakNotif}
             onChange={(e) => onUpdateUser({ streakNotif: e.target.checked })}
-            className="w-4 h-4 accent-[#FF4D8D]"
+            className="w-4 h-4 accent-[#F59E0B]"
           />
         </label>
 
-        <label className="flex items-center justify-between p-3 rounded-3xl bg-[#1E1E2A] cursor-pointer">
+        <label className="flex items-center justify-between p-3 rounded-3xl bg-[#222631] cursor-pointer">
           <div className="flex items-center gap-2.5">
-            <Shield size={16} className="text-[#FF4D8D]" />
+            <Shield size={16} className="text-[#38BDF8]" />
             <div>
               <span className="text-xs font-bold text-white block">
                 Sembunyikan Angkatan
               </span>
-              <span className="text-[10px] text-[#9494A8]">
+              <span className="text-[11px] text-[#94A3B8]">
                 Privasi sesuai UU PDP No. 27 Tahun 2022
               </span>
             </div>
@@ -333,7 +462,7 @@ export default function ProfileScreen({
             type="checkbox"
             checked={user.hideBatch}
             onChange={(e) => onUpdateUser({ hideBatch: e.target.checked })}
-            className="w-4 h-4 accent-[#FF4D8D]"
+            className="w-4 h-4 accent-[#F59E0B]"
           />
         </label>
 
@@ -341,7 +470,7 @@ export default function ProfileScreen({
           <button
             type="button"
             onClick={onLogout}
-            className="py-3 rounded-full bg-[#1E1E2A] hover:bg-[#2A2A3A] text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+            className="py-3 rounded-full bg-[#222631] hover:bg-[#2E3440] text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <LogOut size={14} />
             <span>Keluar</span>
@@ -359,18 +488,18 @@ export default function ProfileScreen({
 
       {confirmDeleteModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-5">
-          <div className="bg-[#15151E] border border-[#2A2A3A] rounded-4xl max-w-xs w-full p-6 space-y-3 text-center">
-            <h3 className="text-sm font-extrabold text-[#FF4D8D]">
+          <div className="bg-[#181B22] border border-[#2E3440] rounded-4xl max-w-xs w-full p-6 space-y-3 text-center">
+            <h3 className="text-sm font-extrabold text-rose-400">
               Hapus Akun Permanen?
             </h3>
-            <p className="text-xs text-[#9494A8] leading-relaxed">
-              Seluruh data NIM, profil, dan riwayat percakapan kamu akan dihapus sesuai UU PDP.
+            <p className="text-xs text-[#94A3B8] leading-relaxed">
+              Seluruh data NIM, profil, dan riwayat percakapan kamu akan dihapus dari penyimpanan lokal sesuai UU PDP.
             </p>
             <div className="flex gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setConfirmDeleteModal(false)}
-                className="flex-1 py-2.5 rounded-full bg-[#1E1E2A] text-white text-xs font-bold"
+                className="flex-1 py-2.5 rounded-full bg-[#222631] text-white text-xs font-bold cursor-pointer"
               >
                 Batal
               </button>
@@ -380,7 +509,7 @@ export default function ProfileScreen({
                   setConfirmDeleteModal(false);
                   onDeleteAccount();
                 }}
-                className="flex-1 py-2.5 rounded-full bg-[#FF4D8D] text-[#0A0A0E] text-xs font-extrabold"
+                className="flex-1 py-2.5 rounded-full bg-[#F59E0B] text-[#0F1115] text-xs font-extrabold cursor-pointer"
               >
                 Hapus
               </button>
