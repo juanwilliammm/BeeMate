@@ -7,15 +7,25 @@ export default {
   theme: {
     extend: {
       colors: {
-        binus: {
-          blue: '#00549A',
-          orange: '#F39200',
-          yellow: '#FFC600',
-          light: '#EBF4FF',
+        bee: {
+          black: '#0A0A0E',
+          card: '#15151E',
+          elevated: '#1E1E2A',
+          border: '#2A2A3A',
+          pink: '#FF4D8D',
+          pinkLight: '#FF85B3',
+          pinkSoft: '#FF6B9E',
+          pinkDark: '#D92B6B',
+          muted: '#9494A8'
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['Poppins', 'Montserrat', 'sans-serif'],
+        display: ['Montserrat', 'Poppins', 'sans-serif'],
+      },
+      borderRadius: {
+        '4xl': '2rem',
+        '5xl': '2.5rem',
       }
     },
   },
