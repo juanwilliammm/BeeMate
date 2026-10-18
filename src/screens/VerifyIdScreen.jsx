@@ -42,7 +42,7 @@ export default function VerifyIdScreen({ user, onUpdateUser, onCompleteRegistrat
   const galleryInputRef = useRef(null);
   const cameraInputRef = useRef(null);
 
-  // Load saved Student ID photo from IndexedDB on mount
+  // Load saved Student ID photo from Supabase Cloud or IndexedDB on mount
   useEffect(() => {
     let mounted = true;
     getStudentIdRecord(user.nim).then((saved) => {
@@ -52,15 +52,18 @@ export default function VerifyIdScreen({ user, onUpdateUser, onCompleteRegistrat
           fileName: saved.fileName,
           source: saved.source,
           savedAt: saved.updatedAt,
-          verificationHash: saved.verificationHash
+          verificationHash: saved.verificationHash,
+          isCloudSynced: saved.isCloudSynced
         });
+      } else if (mounted && user.studentIdPhoto) {
+        setPhotoDataUrl(user.studentIdPhoto);
       }
     });
     return () => {
       mounted = false;
       stopLiveCamera();
     };
-  }, [user.nim]);
+  }, [user.nim, user.studentIdPhoto]);
 
   const stopLiveCamera = () => {
     if (streamRef.current) {
@@ -131,9 +134,10 @@ export default function VerifyIdScreen({ user, onUpdateUser, onCompleteRegistrat
     setIsScanning(true);
     setPhotoDataUrl(dataUrl);
 
-    const hashId = `BINUS-${user.nim.slice(0, 4)}-${Math.floor(100000 + Math.random() * 900000)}`;
+    const hashId = `BINUS-${(user.nim || '2802').slice(0, 4)}-${Math.floor(100000 + Math.random() * 900000)}`;
     const record = await saveStudentIdRecord({
       nim: user.nim,
+      email: user.email,
       name: user.name,
       major: user.major,
       batch: user.batch,
@@ -143,20 +147,24 @@ export default function VerifyIdScreen({ user, onUpdateUser, onCompleteRegistrat
       verificationHash: hashId
     });
 
+    const finalPhotoUrl = record.imageData || dataUrl;
+    setPhotoDataUrl(finalPhotoUrl);
+
     setTimeout(() => {
       setIsScanning(false);
       setUploadMeta({
         fileName: record.fileName,
         source: record.source,
         savedAt: record.updatedAt,
-        verificationHash: hashId
+        verificationHash: hashId,
+        isCloudSynced: record.isCloudSynced
       });
       onUpdateUser({
         verificationStatus: 'Menunggu',
         verified: false,
-        studentIdPhoto: dataUrl
+        studentIdPhoto: finalPhotoUrl
       });
-    }, 850);
+    }, 650);
   };
 
   const handleClearPhoto = async () => {
@@ -344,7 +352,11 @@ export default function VerifyIdScreen({ user, onUpdateUser, onCompleteRegistrat
                 <div className="p-3 rounded-2xl bg-[#0F1115] border border-[#2E3440] flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2 text-[#38BDF8]">
                     <Database size={14} className="text-[#38BDF8] shrink-0" />
-                    <span>Tersimpan di IndexedDB Lokal</span>
+                    <span>
+                      {uploadMeta?.isCloudSynced
+                        ? 'Tersimpan di Supabase Cloud (Sinkron HP & Laptop)'
+                        : 'Tersimpan di Database Lokal & Siap Sinkron Cloud'}
+                    </span>
                   </div>
                   <span className="text-[11px] text-[#F59E0B] font-bold">● Siap Ditinjau</span>
                 </div>

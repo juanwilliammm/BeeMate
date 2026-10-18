@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   INITIAL_USER,
   MOCK_PROFILES,
@@ -7,6 +7,19 @@ import {
 } from './data/mockData';
 import BottomNav from './components/BottomNav';
 import ReportBlockModal from './components/ReportBlockModal';
+import SupabaseConfigModal from './components/SupabaseConfigModal';
+import {
+  getSupabase,
+  getSupabaseConfig,
+  fetchUserFromCloud,
+  upsertUserToCloud,
+  deleteUserFromCloud,
+  mapDbRowToAppState
+} from './utils/supabaseClient';
+import {
+  deleteStudentIdRecord,
+  syncAllLocalStudentIdsToCloud
+} from './utils/studentIdDb';
 
 // Splash Screen + 11 PRD Screens
 import SplashScreen from './screens/SplashScreen';
@@ -31,7 +44,8 @@ import {
   RotateCcw,
   ShieldCheck,
   Sun,
-  Moon
+  Moon,
+  Cloud
 } from 'lucide-react';
 
 const STORAGE_PREFIX = 'beemate_v2_';
@@ -62,19 +76,7 @@ function usePersistentState(key, initialValue) {
 }
 
 function purgeVerifiedStudentIdFromIdb(nim) {
-  try {
-    if (!window.indexedDB || !nim) return;
-    const req = window.indexedDB.open('beemate_secure_idb', 1);
-    req.onsuccess = () => {
-      const db = req.result;
-      if (db.objectStoreNames.contains('student_ids')) {
-        const tx = db.transaction('student_ids', 'readwrite');
-        tx.objectStore('student_ids').delete(nim);
-      }
-    };
-  } catch {
-    // Ignore IDB errors
-  }
+  deleteStudentIdRecord(nim);
 }
 
 const VALID_SCREENS = [
@@ -100,6 +102,7 @@ export default function App() {
 
   const [theme, setTheme] = usePersistentState('theme', 'light');
   const [user, setUser] = usePersistentState('user', INITIAL_USER);
+  const [userPassword, setUserPassword] = usePersistentState('password', 'binusian2028');
   const [profiles] = useState(MOCK_PROFILES);
   const [swipedIds, setSwipedIds] = usePersistentState('swipedIds', []);
   const [blockedIds, setBlockedIds] = usePersistentState('blockedIds', []);
@@ -116,6 +119,13 @@ export default function App() {
   const [reportTarget, setReportTarget] = useState(null);
   const [notificationToast, setNotificationToast] = useState(null);
   const [showDemoDrawer, setShowDemoDrawer] = useState(false);
+  const [showCloudModal, setShowCloudModal] = useState(false);
+  const [isCloudConnected, setIsCloudConnected] = useState(
+    () => getSupabaseConfig().isConfigured
+  );
+
+  const isApplyingRemoteRef = useRef(false);
+  const lastSyncedTimestampRef = useRef(null);
 
   const handleToggleTheme = () => {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
@@ -147,10 +157,136 @@ export default function App() {
     }, 3400);
   };
 
+  const applyCloudRowToLocal = (row) => {
+    if (!row) return;
+    isApplyingRemoteRef.current = true;
+    lastSyncedTimestampRef.current = row.updated_at;
+    const mapped = mapDbRowToAppState(row, INITIAL_USER, INITIAL_CONVERSATIONS);
+    if (mapped) {
+      setUser(mapped.user);
+      setSwipedIds(mapped.swipedIds);
+      setBlockedIds(mapped.blockedIds);
+      setDailyLikesLeft(mapped.dailyLikesLeft);
+      setConversations(mapped.conversations);
+    }
+    setTimeout(() => {
+      isApplyingRemoteRef.current = false;
+    }, 250);
+  };
+
+  // Initial pull, local photo migration & Realtime subscription from Supabase Cloud
+  useEffect(() => {
+    const supabase = getSupabase();
+    const cleanEmail = user?.email?.trim()?.toLowerCase();
+    if (!supabase || !cleanEmail) {
+      setIsCloudConnected(false);
+      return;
+    }
+
+    setIsCloudConnected(true);
+    let active = true;
+
+    (async () => {
+      // 1. Migrate any local IndexedDB / LocalStorage student ID photos to Supabase
+      const migratedRecords = await syncAllLocalStudentIdsToCloud(user);
+      const matchingMigrated = migratedRecords.find((r) => r.nim === user.nim) || migratedRecords[0];
+
+      // 2. Fetch existing cloud row
+      const { data: cloudRow } = await fetchUserFromCloud(cleanEmail);
+      if (!active) return;
+
+      if (cloudRow) {
+        // If local browser had a studentIdPhoto that cloudRow doesn't have yet, push it to cloud
+        const mergedRow = {
+          ...cloudRow,
+          student_id_photo:
+            cloudRow.student_id_photo ||
+            matchingMigrated?.imageData ||
+            user.studentIdPhoto ||
+            null
+        };
+        applyCloudRowToLocal(mergedRow);
+        if (!cloudRow.student_id_photo && mergedRow.student_id_photo) {
+          await upsertUserToCloud({
+            user: { ...user, studentIdPhoto: mergedRow.student_id_photo },
+            password: userPassword,
+            swipedIds,
+            blockedIds,
+            dailyLikesLeft,
+            conversations
+          });
+        }
+      } else {
+        // Seed initial user state to Supabase if not yet in cloud
+        await upsertUserToCloud({
+          user: {
+            ...user,
+            studentIdPhoto: matchingMigrated?.imageData || user.studentIdPhoto || null
+          },
+          password: userPassword,
+          swipedIds,
+          blockedIds,
+          dailyLikesLeft,
+          conversations
+        });
+      }
+    })();
+
+    const channel = supabase
+      .channel(`beemate_user_${cleanEmail}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'beemate_users',
+          filter: `email=eq.${cleanEmail}`
+        },
+        (payload) => {
+          if (
+            payload.new &&
+            payload.new.updated_at &&
+            payload.new.updated_at !== lastSyncedTimestampRef.current
+          ) {
+            applyCloudRowToLocal(payload.new);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
+  }, [user?.email, isCloudConnected]);
+
+  // Automatic debounced push to Supabase whenever user, photos, conversations, or swipes change
+  useEffect(() => {
+    if (!isCloudConnected || isApplyingRemoteRef.current || !user?.email) return;
+
+    const timer = setTimeout(async () => {
+      const res = await upsertUserToCloud({
+        user,
+        password: userPassword,
+        swipedIds,
+        blockedIds,
+        dailyLikesLeft,
+        conversations
+      });
+      if (res.ok && res.data?.updated_at) {
+        lastSyncedTimestampRef.current = res.data.updated_at;
+      }
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [user, userPassword, swipedIds, blockedIds, dailyLikesLeft, conversations, isCloudConnected]);
+
   const handleUpdateUser = (patch) => {
     setUser((prev) => {
       const updated = { ...prev, ...patch };
       if (patch.verificationStatus === 'Disetujui') {
+        updated.verified = true;
+        updated.studentIdPhoto = null;
         purgeVerifiedStudentIdFromIdb(updated.nim);
       }
       return updated;
@@ -476,9 +612,23 @@ export default function App() {
           </div>
         )}
 
-        {/* Floating Quick Controls: Theme Toggle (Light/Dark) + Demo Panel */}
+        {/* Floating Quick Controls: Cloud Sync + Theme Toggle (Light/Dark) + Demo Panel */}
         {currentScreen !== 'splash' && (
           <div className="absolute top-3 right-3 z-40 flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setShowCloudModal(true)}
+              title="Pengaturan Database Cloud (Supabase)"
+              className={`px-2.5 py-1.5 rounded-full bg-[#181B22]/90 backdrop-blur-md border flex items-center gap-1.5 text-[11px] font-bold shadow-lg cursor-pointer transition-all ${
+                isCloudConnected
+                  ? 'border-[#38BDF8]/60 text-[#38BDF8]'
+                  : 'border-[#2E3440] text-[#9CA3AF] hover:text-[#F3F4F6] hover:border-[#F59E0B]/50'
+              }`}
+            >
+              <Cloud size={12} className={isCloudConnected ? 'text-[#38BDF8]' : 'text-[#F59E0B]'} />
+              <span>{isCloudConnected ? 'Cloud ON' : 'Supabase'}</span>
+            </button>
+
             <button
               type="button"
               onClick={handleToggleTheme}
@@ -526,12 +676,21 @@ export default function App() {
           {currentScreen === 'login' && (
             <LoginScreen
               theme={theme}
-              onLoginSuccess={(email) => {
-                handleUpdateUser({ email });
-                showToast('Berhasil masuk ke akun BeeMate!');
+              isCloudConnected={isCloudConnected}
+              onOpenCloudConfig={() => setShowCloudModal(true)}
+              onLoginSuccess={(email, password, cloudRow) => {
+                if (password) setUserPassword(password);
+                if (cloudRow) {
+                  applyCloudRowToLocal(cloudRow);
+                  showToast('Data profil & foto berhasil dimuat dari Supabase Cloud!');
+                } else {
+                  handleUpdateUser({ email });
+                  showToast('Berhasil masuk ke akun BeeMate!');
+                }
                 setCurrentScreen('home');
               }}
-              onRegisterStart={(email) => {
+              onRegisterStart={(email, password) => {
+                if (password) setUserPassword(password);
                 handleUpdateUser({
                   email,
                   verificationStatus: 'Menunggu'
@@ -571,7 +730,9 @@ export default function App() {
               onUpdateUser={handleUpdateUser}
               onCompleteRegistration={() => {
                 showToast(
-                  'Pendaftaran selesai! Kartu Binusian sedang ditinjau Admin (1x24 jam).'
+                  isCloudConnected
+                    ? 'Pendaftaran & foto Binusian Card tersimpan di Supabase Cloud!'
+                    : 'Pendaftaran selesai! Kartu Binusian sedang ditinjau Admin (1x24 jam).'
                 );
                 setCurrentScreen('home');
               }}
@@ -647,6 +808,8 @@ export default function App() {
               user={user}
               conversations={conversations}
               theme={theme}
+              isCloudConnected={isCloudConnected}
+              onOpenCloudConfig={() => setShowCloudModal(true)}
               onToggleTheme={handleToggleTheme}
               onUpdateUser={handleUpdateUser}
               onLogout={() => {
@@ -654,6 +817,7 @@ export default function App() {
                 setCurrentScreen('login');
               }}
               onDeleteAccount={() => {
+                deleteUserFromCloud(user.email, user.nim);
                 handleResetDemoData();
                 setCurrentScreen('login');
               }}
@@ -707,6 +871,30 @@ export default function App() {
             onConfirmBlock={handleConfirmBlock}
           />
         )}
+
+        {/* Supabase Cloud Configuration Modal */}
+        <SupabaseConfigModal
+          isOpen={showCloudModal}
+          onClose={() => setShowCloudModal(false)}
+          currentUserEmail={user.email}
+          currentUser={user}
+          onForcePushLocalToCloud={async () => {
+            await upsertUserToCloud({
+              user,
+              password: userPassword,
+              swipedIds,
+              blockedIds,
+              dailyLikesLeft,
+              conversations
+            });
+          }}
+          onConfigSaved={(ok) => {
+            setIsCloudConnected(Boolean(ok || getSupabaseConfig().isConfigured));
+            if (ok) {
+              showToast('Terhubung ke Supabase Cloud! Sinkronisasi HP & Laptop aktif.');
+            }
+          }}
+        />
 
         {/* Separated QA / Lecturer Demo Drawer */}
         {showDemoDrawer && (

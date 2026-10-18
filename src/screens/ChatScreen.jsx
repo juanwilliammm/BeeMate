@@ -16,6 +16,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import StreakBadge from '../components/StreakBadge';
+import { uploadPhotoToSupabase } from '../utils/supabaseClient';
 
 export default function ChatScreen({
   conversation,
@@ -47,14 +48,19 @@ export default function ChatScreen({
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       const dataUrl = ev.target?.result;
       if (typeof dataUrl === 'string') {
+        const uploaded = await uploadPhotoToSupabase(
+          dataUrl,
+          'chat-attachments',
+          conversation.id
+        );
         onSendMessage(
           conversation.id,
           `📎 Lampiran Diskusi: ${file.name}`,
           'me',
-          dataUrl
+          uploaded.url || dataUrl
         );
       }
     };

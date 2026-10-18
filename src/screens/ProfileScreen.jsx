@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   BadgeCheck,
   Edit3,
@@ -14,9 +14,11 @@ import {
   Plus,
   Target,
   BookOpen,
-  X
+  X,
+  Cloud
 } from 'lucide-react';
 import { GOALS, INTERESTS_LIST, FACULTY_MAJORS_MAP } from '../data/mockData';
+import { uploadPhotoToSupabase } from '../utils/supabaseClient';
 
 const FACULTY_LIST = Object.keys(FACULTY_MAJORS_MAP);
 
@@ -24,6 +26,8 @@ export default function ProfileScreen({
   user,
   conversations,
   theme = 'light',
+  isCloudConnected = false,
+  onOpenCloudConfig,
   onToggleTheme,
   onUpdateUser,
   onLogout,
@@ -45,6 +49,17 @@ export default function ProfileScreen({
   const [savedBanner, setSavedBanner] = useState(false);
 
   const slotInputRef = useRef(null);
+
+  useEffect(() => {
+    setName(user.name);
+    setFaculty(user.faculty || FACULTY_LIST[0]);
+    setMajor(user.major);
+    setBio(user.bio);
+    setGoal(user.goal);
+    setPromptAnswer(user.promptAnswer || '');
+    setInterests(user.interests || []);
+    setExtraPhotos(user.extraPhotos || [null, null, null]);
+  }, [user]);
 
   const availableMajors = FACULTY_MAJORS_MAP[faculty] || [];
 
@@ -81,17 +96,25 @@ export default function ProfileScreen({
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       const url = ev.target?.result;
       if (typeof url === 'string') {
+        const uploaded = await uploadPhotoToSupabase(
+          url,
+          'avatars',
+          `${user.nim || 'user'}_slot_${activeSlotIdx}`
+        );
+        const finalUrl = uploaded.url || url;
         if (activeSlotIdx === -1) {
-          onUpdateUser({ avatar: url });
+          onUpdateUser({ avatar: finalUrl });
         } else {
           const next = [...extraPhotos];
-          next[activeSlotIdx] = url;
+          next[activeSlotIdx] = finalUrl;
           setExtraPhotos(next);
           onUpdateUser({ extraPhotos: next });
         }
+        setSavedBanner(true);
+        setTimeout(() => setSavedBanner(false), 2500);
       }
     };
     reader.readAsDataURL(file);
@@ -408,6 +431,37 @@ export default function ProfileScreen({
         <span className="text-xs font-extrabold text-white block">
           Pengaturan & Privasi
         </span>
+
+        {/* Supabase Cloud Sync Row */}
+        {onOpenCloudConfig && (
+          <div
+            onClick={onOpenCloudConfig}
+            className="flex items-center justify-between p-3 rounded-3xl bg-[#222631] border border-[#38BDF8]/30 cursor-pointer"
+          >
+            <div className="flex items-center gap-2.5">
+              <Cloud size={16} className="text-[#38BDF8]" />
+              <div>
+                <span className="text-xs font-bold text-white block">
+                  Database Cloud (Supabase)
+                </span>
+                <span className="text-[11px] text-[#94A3B8]">
+                  {isCloudConnected
+                    ? 'Sinkronisasi HP & Laptop Aktif'
+                    : 'Klik untuk hubungkan Supabase'}
+                </span>
+              </div>
+            </div>
+            <span
+              className={`px-3 py-1 rounded-full text-[11px] font-extrabold ${
+                isCloudConnected
+                  ? 'bg-[#38BDF8]/15 text-[#38BDF8] border border-[#38BDF8]/40'
+                  : 'bg-[#F59E0B] text-[#0F1115]'
+              }`}
+            >
+              {isCloudConnected ? '● Cloud Aktif' : 'Setup'}
+            </span>
+          </div>
+        )}
 
         {/* Interactive Light & Dark Mode Switcher */}
         <div

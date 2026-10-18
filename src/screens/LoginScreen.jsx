@@ -8,11 +8,16 @@ import {
   ArrowLeft,
   ArrowRight,
   Sparkles,
-  UserCheck
+  UserCheck,
+  Cloud,
+  RefreshCw
 } from 'lucide-react';
+import { fetchUserFromCloud, getSupabaseConfig } from '../utils/supabaseClient';
 
 export default function LoginScreen({
   theme = 'light',
+  isCloudConnected = false,
+  onOpenCloudConfig,
   onLoginSuccess,
   onRegisterStart,
   onQuickSkipToHome
@@ -28,6 +33,7 @@ export default function LoginScreen({
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
   const [forgotModal, setForgotModal] = useState(false);
+  const [isLoadingCloud, setIsLoadingCloud] = useState(false);
 
   const isRegisterMode = stepView === 'signup';
   const logoSrc =
@@ -55,9 +61,24 @@ export default function LoginScreen({
     return regex.test(value.trim());
   };
 
-  const handleSubmit = (e) => {
+  const registerFailedAttempt = (customMessage) => {
+    const nextAttempts = failedAttempts + 1;
+    setFailedAttempts(nextAttempts);
+    if (nextAttempts >= 5) {
+      setLockoutSeconds(120);
+      setErrorMsg(
+        'Terlalu banyak percobaan gagal (5x). Akun ditahan sementara selama 2 menit.'
+      );
+    } else {
+      setErrorMsg(
+        customMessage || `Email atau kata sandi salah. (${nextAttempts}/5 percobaan)`
+      );
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (lockoutSeconds > 0) return;
+    if (lockoutSeconds > 0 || isLoadingCloud) return;
 
     const cleanEmail = email.trim().toLowerCase();
 
@@ -69,24 +90,46 @@ export default function LoginScreen({
     }
 
     if (password.length < 6 || password === 'salah') {
-      const nextAttempts = failedAttempts + 1;
-      setFailedAttempts(nextAttempts);
-      if (nextAttempts >= 5) {
-        setLockoutSeconds(120);
-        setErrorMsg(
-          'Terlalu banyak percobaan gagal (5x). Akun ditahan sementara selama 2 menit.'
-        );
-      } else {
-        setErrorMsg(`Email atau kata sandi salah. (${nextAttempts}/5 percobaan)`);
-      }
+      registerFailedAttempt();
       return;
     }
 
     setErrorMsg('');
+
+    const { isConfigured } = getSupabaseConfig();
+    if (isConfigured) {
+      setIsLoadingCloud(true);
+      const { data: cloudRow } = await fetchUserFromCloud(cleanEmail);
+      setIsLoadingCloud(false);
+
+      if (isRegisterMode) {
+        if (cloudRow && cloudRow.email) {
+          setErrorMsg(
+            'Email kampus ini sudah terdaftar di database Supabase. Silakan gunakan menu Masuk.'
+          );
+          return;
+        }
+        onRegisterStart(cleanEmail, password);
+        return;
+      }
+
+      // Sign-in mode with Cloud DB:
+      if (cloudRow) {
+        if (cloudRow.password_hash && cloudRow.password_hash !== password) {
+          registerFailedAttempt(
+            `Kata sandi tidak sesuai dengan akun di Cloud. (${failedAttempts + 1}/5 percobaan)`
+          );
+          return;
+        }
+        onLoginSuccess(cleanEmail, password, cloudRow);
+        return;
+      }
+    }
+
     if (isRegisterMode) {
-      onRegisterStart(cleanEmail);
+      onRegisterStart(cleanEmail, password);
     } else {
-      onLoginSuccess(cleanEmail);
+      onLoginSuccess(cleanEmail, password, null);
     }
   };
 
@@ -109,6 +152,26 @@ export default function LoginScreen({
           <p className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.26em] text-[#94A3B8] mt-2">
             find your hive &amp; thrive
           </p>
+
+          {/* Cloud Database Status Pill */}
+          {onOpenCloudConfig && (
+            <button
+              type="button"
+              onClick={onOpenCloudConfig}
+              className={`mt-5 px-3.5 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 border transition cursor-pointer ${
+                isCloudConnected
+                  ? 'bg-[#38BDF8]/15 text-[#38BDF8] border-[#38BDF8]/40'
+                  : 'bg-[#181B22] text-[#94A3B8] border-[#2E3440] hover:border-[#F59E0B]'
+              }`}
+            >
+              <Cloud size={13} />
+              <span>
+                {isCloudConnected
+                  ? '● Supabase Cloud Aktif (Sinkron HP & Laptop)'
+                  : 'Hubungkan Database Supabase (HP & Laptop)'}
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Bottom Amber Welcome Sheet (Slides up like Middle Phone in Reference Image 3) */}
@@ -207,7 +270,7 @@ export default function LoginScreen({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="nama.mahasiswa@binus.ac.id"
-                disabled={lockoutSeconds > 0}
+                disabled={lockoutSeconds > 0 || isLoadingCloud}
                 className="w-full pl-11 pr-4 py-3.5 text-xs font-semibold rounded-full bg-[#222631] border border-[#2E3440] text-white placeholder-[#64748B] focus:outline-none focus:border-[#F59E0B] transition"
                 required
               />
@@ -226,7 +289,7 @@ export default function LoginScreen({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Minimal 6 karakter"
-                disabled={lockoutSeconds > 0}
+                disabled={lockoutSeconds > 0 || isLoadingCloud}
                 className="w-full pl-11 pr-11 py-3.5 text-xs font-semibold rounded-full bg-[#222631] border border-[#2E3440] text-white placeholder-[#64748B] focus:outline-none focus:border-[#F59E0B] transition"
                 required
               />
@@ -270,15 +333,24 @@ export default function LoginScreen({
           {/* Primary Pill Action Button (Matches Black Pill in Reference Image 3) */}
           <button
             type="submit"
-            disabled={lockoutSeconds > 0}
+            disabled={lockoutSeconds > 0 || isLoadingCloud}
             className="w-full py-4 rounded-full bg-[#0F1115] hover:bg-[#222631] disabled:opacity-50 text-white font-display font-extrabold text-xs sm:text-sm shadow-xl transition flex items-center justify-center gap-2 cursor-pointer keep-dark-overlay mt-2"
           >
-            <span>
-              {isRegisterMode
-                ? 'Daftar Baru & Kirim OTP'
-                : 'Masuk'}
-            </span>
-            <ArrowRight size={15} />
+            {isLoadingCloud ? (
+              <>
+                <RefreshCw size={15} className="animate-spin text-[#F59E0B]" />
+                <span>Menyinkronkan dari Supabase...</span>
+              </>
+            ) : (
+              <>
+                <span>
+                  {isRegisterMode
+                    ? 'Daftar Baru & Kirim OTP'
+                    : 'Masuk'}
+                </span>
+                <ArrowRight size={15} />
+              </>
+            )}
           </button>
         </form>
 
@@ -300,11 +372,32 @@ export default function LoginScreen({
             <ArrowRight size={15} className="text-[#94A3B8]" />
           </button>
 
+          {onOpenCloudConfig && (
+            <button
+              type="button"
+              onClick={onOpenCloudConfig}
+              className="w-full px-5 py-3 rounded-full bg-[#222631] hover:bg-[#2E3440] border border-[#2E3440] flex items-center justify-between text-xs font-bold text-white shadow-sm transition cursor-pointer"
+            >
+              <span className="flex items-center gap-2.5">
+                <Cloud
+                  size={16}
+                  className={isCloudConnected ? 'text-[#38BDF8]' : 'text-[#94A3B8]'}
+                />
+                <span>
+                  {isCloudConnected
+                    ? 'Supabase Terhubung (Sinkron HP & Laptop)'
+                    : 'Pengaturan Database Supabase'}
+                </span>
+              </span>
+              <ArrowRight size={15} className="text-[#94A3B8]" />
+            </button>
+          )}
+
           {onQuickSkipToHome && (
             <button
               type="button"
               onClick={onQuickSkipToHome}
-              className="w-full px-5 py-3.5 rounded-full bg-[#222631] hover:bg-[#2E3440] border border-[#2E3440] flex items-center justify-between text-xs font-bold text-white shadow-sm transition cursor-pointer"
+              className="w-full px-5 py-3 rounded-full bg-[#222631] hover:bg-[#2E3440] border border-[#2E3440] flex items-center justify-between text-xs font-bold text-white shadow-sm transition cursor-pointer"
             >
               <span className="flex items-center gap-2.5">
                 <Sparkles size={16} className="text-[#38BDF8]" />
