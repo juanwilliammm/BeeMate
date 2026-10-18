@@ -152,26 +152,6 @@ export default function LoginScreen({
           <p className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.26em] text-[#94A3B8] mt-2">
             find your hive &amp; thrive
           </p>
-
-          {/* Cloud Database Status Pill */}
-          {onOpenCloudConfig && (
-            <button
-              type="button"
-              onClick={onOpenCloudConfig}
-              className={`mt-5 px-3.5 py-1.5 rounded-full text-[11px] font-bold inline-flex items-center gap-1.5 border transition cursor-pointer ${
-                isCloudConnected
-                  ? 'bg-[#38BDF8]/15 text-[#38BDF8] border-[#38BDF8]/40'
-                  : 'bg-[#181B22] text-[#94A3B8] border-[#2E3440] hover:border-[#F59E0B]'
-              }`}
-            >
-              <Cloud size={13} />
-              <span>
-                {isCloudConnected
-                  ? '● Supabase Cloud Aktif (Sinkron HP & Laptop)'
-                  : 'Hubungkan Database Supabase (HP & Laptop)'}
-              </span>
-            </button>
-          )}
         </div>
 
         {/* Bottom Amber Welcome Sheet (Slides up like Middle Phone in Reference Image 3) */}
@@ -372,32 +352,11 @@ export default function LoginScreen({
             <ArrowRight size={15} className="text-[#94A3B8]" />
           </button>
 
-          {onOpenCloudConfig && (
-            <button
-              type="button"
-              onClick={onOpenCloudConfig}
-              className="w-full px-5 py-3 rounded-full bg-[#222631] hover:bg-[#2E3440] border border-[#2E3440] flex items-center justify-between text-xs font-bold text-white shadow-sm transition cursor-pointer"
-            >
-              <span className="flex items-center gap-2.5">
-                <Cloud
-                  size={16}
-                  className={isCloudConnected ? 'text-[#38BDF8]' : 'text-[#94A3B8]'}
-                />
-                <span>
-                  {isCloudConnected
-                    ? 'Supabase Terhubung (Sinkron HP & Laptop)'
-                    : 'Pengaturan Database Supabase'}
-                </span>
-              </span>
-              <ArrowRight size={15} className="text-[#94A3B8]" />
-            </button>
-          )}
-
           {onQuickSkipToHome && (
             <button
               type="button"
               onClick={onQuickSkipToHome}
-              className="w-full px-5 py-3 rounded-full bg-[#222631] hover:bg-[#2E3440] border border-[#2E3440] flex items-center justify-between text-xs font-bold text-white shadow-sm transition cursor-pointer"
+              className="w-full px-5 py-3.5 rounded-full bg-[#222631] hover:bg-[#2E3440] border border-[#2E3440] flex items-center justify-between text-xs font-bold text-white shadow-sm transition cursor-pointer"
             >
               <span className="flex items-center gap-2.5">
                 <Sparkles size={16} className="text-[#38BDF8]" />

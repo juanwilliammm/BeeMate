@@ -432,37 +432,6 @@ export default function ProfileScreen({
           Pengaturan & Privasi
         </span>
 
-        {/* Supabase Cloud Sync Row */}
-        {onOpenCloudConfig && (
-          <div
-            onClick={onOpenCloudConfig}
-            className="flex items-center justify-between p-3 rounded-3xl bg-[#222631] border border-[#38BDF8]/30 cursor-pointer"
-          >
-            <div className="flex items-center gap-2.5">
-              <Cloud size={16} className="text-[#38BDF8]" />
-              <div>
-                <span className="text-xs font-bold text-white block">
-                  Database Cloud (Supabase)
-                </span>
-                <span className="text-[11px] text-[#94A3B8]">
-                  {isCloudConnected
-                    ? 'Sinkronisasi HP & Laptop Aktif'
-                    : 'Klik untuk hubungkan Supabase'}
-                </span>
-              </div>
-            </div>
-            <span
-              className={`px-3 py-1 rounded-full text-[11px] font-extrabold ${
-                isCloudConnected
-                  ? 'bg-[#38BDF8]/15 text-[#38BDF8] border border-[#38BDF8]/40'
-                  : 'bg-[#F59E0B] text-[#0F1115]'
-              }`}
-            >
-              {isCloudConnected ? '● Cloud Aktif' : 'Setup'}
-            </span>
-          </div>
-        )}
-
         {/* Interactive Light & Dark Mode Switcher */}
         <div
           onClick={onToggleTheme}
