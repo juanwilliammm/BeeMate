@@ -27,6 +27,7 @@ import {
 
 export default function MatchingScreen({
   user,
+  theme = 'light',
   profiles,
   swipedIds,
   focusedProfileId,
@@ -155,15 +156,18 @@ export default function MatchingScreen({
     interestFilter !== 'Semua'
   ].filter(Boolean).length;
 
+  const logoSrc =
+    theme === 'light' ? '/beemate-logo-light.png' : '/beemate-logo-dark.png';
+
   return (
     <div className="flex flex-col h-full bg-[#0F1115] text-white relative overflow-hidden px-4 pt-4 pb-2">
       {/* Header */}
       <div className="flex items-center justify-between mb-3 z-20 px-1">
         <div className="flex items-center gap-2">
           <img
-            src="/beemate-logo.png"
+            src={logoSrc}
             alt="BeeMate"
-            className="w-7 h-7 rounded-full object-contain bg-[#181B22] border border-[#F59E0B]"
+            className="w-7 h-7 object-contain"
           />
           <h1 className="font-display text-base font-extrabold tracking-tight">
             Explore <span className="text-[#F59E0B]">Kolaborator</span>

@@ -79,7 +79,7 @@ export default function SplashScreen({ theme = 'light', onFinish }) {
 
               <div className="pl-3 flex flex-col justify-center whitespace-nowrap">
                 <span className="font-display text-2xl font-extrabold tracking-tight leading-none text-white">
-                  <span className="text-[#F59E0B]">bee</span>Mate
+                  <span className="text-[#F59E0B]">Bee</span>Mate
                 </span>
                 <span className="text-xs font-semibold tracking-wide text-[#94A3B8] mt-1">
                   find your hive &amp; thrive
@@ -98,7 +98,7 @@ export default function SplashScreen({ theme = 'light', onFinish }) {
               className="w-28 h-28 sm:w-32 sm:h-32 object-contain animate-float-bee"
             />
             <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight mt-3 text-white">
-              <span className="text-[#F59E0B]">bee</span>Mate
+              <span className="text-[#F59E0B]">Bee</span>Mate
             </h1>
             <p className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.26em] text-[#94A3B8] mt-2">
               find your hive &amp; thrive

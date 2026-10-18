@@ -596,6 +596,7 @@ export default function App() {
           {currentScreen === 'matching' && (
             <MatchingScreen
               user={user}
+              theme={theme}
               profiles={visibleProfiles}
               swipedIds={swipedIds}
               focusedProfileId={focusedProfileId}
