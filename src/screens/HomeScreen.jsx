@@ -101,7 +101,7 @@ export default function HomeScreen({
       </div>
 
       {/* Hero Academic Networking Banner */}
-      <div className="relative shrink-0 rounded-4xl bg-gradient-to-br from-[#222631] via-[#181B22] to-[#0F1115] border border-[#2E3440] p-5 overflow-hidden shadow-xl space-y-3">
+      <div className="relative shrink-0 rounded-4xl bg-[#181B22] border border-[#2E3440] p-5 overflow-hidden shadow-lg space-y-3">
         <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider">
             Target Kolaborasi:
@@ -128,7 +128,7 @@ export default function HomeScreen({
                 className={`px-3 py-1.5 rounded-full text-[11px] font-extrabold shrink-0 transition cursor-pointer ${
                   active
                     ? 'bg-[#F59E0B] text-[#0F1115]'
-                    : 'bg-[#0F1115]/80 text-[#94A3B8] border border-[#2E3440] hover:text-white'
+                    : 'bg-[#222631] text-[#94A3B8] border border-[#2E3440] hover:text-white'
                 }`}
               >
                 {g === 'Semua' ? 'Semua Tujuan' : g}
@@ -150,7 +150,7 @@ export default function HomeScreen({
           <button
             type="button"
             onClick={() => onNavigate('messages')}
-            className="py-3 px-4 rounded-full bg-[#0F1115] hover:bg-[#222631] text-white border border-[#2E3440] font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+            className="py-3 px-4 rounded-full bg-[#222631] hover:bg-[#2E3440] text-white border border-[#2E3440] font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
           >
             <MessageCircle size={15} className="text-[#F59E0B]" />
             <span>{conversations.length} Koneksi</span>

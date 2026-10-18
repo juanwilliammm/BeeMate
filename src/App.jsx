@@ -462,12 +462,12 @@ export default function App() {
 
   return (
     <div
-      className={`min-h-screen bg-[#08090C] flex items-center justify-center p-0 sm:p-4 transition-colors duration-300 ${
+      className={`h-[100dvh] overflow-hidden bg-[#08090C] flex items-center justify-center p-0 sm:p-3 transition-colors duration-300 ${
         theme === 'light' ? 'theme-light' : 'theme-dark'
       }`}
     >
-      {/* Native Mobile App Frame */}
-      <div className="w-full max-w-[420px] h-screen sm:h-[820px] bg-[#0F1115] sm:rounded-[40px] shadow-2xl shadow-black/40 overflow-hidden flex flex-col relative sm:border-[5px] sm:border-[#222631] transition-colors duration-300">
+      {/* Native Mobile App Frame — Constrained to viewport height so BottomNav is ALWAYS visible without scrolling */}
+      <div className="w-full max-w-[420px] h-[100dvh] sm:h-[calc(100dvh-1.5rem)] sm:max-h-[820px] bg-[#0F1115] sm:rounded-[40px] shadow-2xl shadow-black/40 overflow-hidden flex flex-col relative sm:border-[5px] sm:border-[#222631] transition-colors duration-300">
         {/* Global Notification Toast */}
         {notificationToast && (
           <div className="absolute top-12 left-4 right-4 z-50 bg-[#181B22]/95 backdrop-blur-md text-[#F3F4F6] px-4 py-3 rounded-2xl shadow-2xl border border-[#F59E0B]/50 flex items-center gap-2.5 text-xs animate-in fade-in duration-200">
@@ -515,7 +515,7 @@ export default function App() {
         )}
 
         {/* Active Screen Viewport */}
-        <main className="flex-1 overflow-hidden flex flex-col">
+        <main className="flex-1 min-h-0 overflow-hidden flex flex-col">
           {currentScreen === 'splash' && (
             <SplashScreen
               theme={theme}

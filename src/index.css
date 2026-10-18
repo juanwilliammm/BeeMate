@@ -70,6 +70,7 @@ body {
 
 /* Borders in Light Mode */
 .theme-light .border-\[\#2E3440\]:not(.keep-dark-overlay *),
+.theme-light .border-\[\#2E3440\]\/60:not(.keep-dark-overlay *),
 .theme-light .border-\[\#222631\]:not(.keep-dark-overlay *),
 .theme-light.sm\:border-\[\#222631\],
 .theme-light .sm\:border-\[\#222631\] {
@@ -109,7 +110,8 @@ body {
   border-color: rgba(2, 132, 199, 0.32) !important;
 }
 
-.theme-light .text-\[\#F59E0B\]:not(.keep-dark-overlay *) {
+.theme-light .text-\[\#F59E0B\]:not(.keep-dark-overlay *),
+.theme-light .text-\[\#FBBF24\]:not(.keep-dark-overlay *) {
   color: #D97706 !important;
 }
 

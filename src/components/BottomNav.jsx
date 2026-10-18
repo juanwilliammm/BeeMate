@@ -10,10 +10,10 @@ export default function BottomNav({ currentScreen, onNavigate, unreadTotal }) {
   ];
 
   return (
-    <div className="px-5 pb-4 pt-2 bg-gradient-to-t from-[#0F1115] via-[#0F1115]/95 to-transparent shrink-0 z-20">
+    <div className="px-5 pb-3.5 pt-2 bg-[#0F1115] border-t border-[#2E3440]/60 shrink-0 z-30">
       <nav
         aria-label="Navigasi Utama"
-        className="bg-[#181B22] border border-[#2E3440] rounded-full p-1.5 flex items-center justify-between shadow-2xl shadow-black/80"
+        className="bg-[#181B22] border border-[#2E3440] rounded-full p-1.5 flex items-center justify-between shadow-xl"
       >
         {navItems.map((item) => {
           const Icon = item.icon;
