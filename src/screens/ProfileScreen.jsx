@@ -10,6 +10,7 @@ import {
   Users,
   CheckCircle2,
   Moon,
+  Sun,
   Plus,
   Target,
   BookOpen,
@@ -22,6 +23,8 @@ const FACULTY_LIST = Object.keys(FACULTY_MAJORS_MAP);
 export default function ProfileScreen({
   user,
   conversations,
+  theme = 'light',
+  onToggleTheme,
   onUpdateUser,
   onLogout,
   onDeleteAccount
@@ -405,6 +408,31 @@ export default function ProfileScreen({
         <span className="text-xs font-extrabold text-white block">
           Pengaturan & Privasi
         </span>
+
+        {/* Interactive Light & Dark Mode Switcher */}
+        <div
+          onClick={onToggleTheme}
+          className="flex items-center justify-between p-3 rounded-3xl bg-[#222631] cursor-pointer"
+        >
+          <div className="flex items-center gap-2.5">
+            {theme === 'light' ? (
+              <Sun size={16} className="text-[#F59E0B]" />
+            ) : (
+              <Moon size={16} className="text-[#F59E0B]" />
+            )}
+            <div>
+              <span className="text-xs font-bold text-white block">
+                Tema Tampilan Aplikasi
+              </span>
+              <span className="text-[11px] text-[#94A3B8]">
+                Saat ini: {theme === 'light' ? 'Light Mode (Terang)' : 'Dark Mode (Gelap)'}
+              </span>
+            </div>
+          </div>
+          <span className="px-3 py-1 rounded-full bg-[#F59E0B] text-[#0F1115] text-[11px] font-extrabold">
+            {theme === 'light' ? '☀️ Light' : '🌙 Dark'}
+          </span>
+        </div>
 
         <label className="flex items-center justify-between p-3 rounded-3xl bg-[#222631] cursor-pointer">
           <div className="flex items-center gap-2.5">

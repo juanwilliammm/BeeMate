@@ -309,14 +309,14 @@ export default function MatchingScreen({
             className="relative w-full h-full rounded-4xl overflow-hidden bg-[#181B22] border-2 border-[#2E3440] shadow-2xl select-none cursor-grab active:cursor-grabbing flex flex-col justify-between"
           >
             {/* Top 50% Portrait + Academic Verification Badges */}
-            <div className="relative h-[48%] w-full shrink-0 overflow-hidden bg-[#0F1115]">
+            <div className="relative h-[48%] w-full shrink-0 overflow-hidden bg-[#0F1115] keep-dark-overlay">
               <img
                 src={currentProfile.avatar}
                 alt={currentProfile.name}
                 draggable={false}
                 className="w-full h-full object-cover pointer-events-none"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#181B22] via-black/25 to-black/50 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/50 pointer-events-none" />
 
               {/* Top Interactive 3-Slide Bars + Match Score + Report */}
               <div className="absolute top-0 inset-x-0 p-4 space-y-2.5 z-20">

@@ -119,7 +119,7 @@ export default function VideoCallScreen({
   }
 
   return (
-    <div className="flex flex-col h-full bg-[#0F1115] text-white relative overflow-hidden justify-between p-5">
+    <div className="flex flex-col h-full bg-[#0F1115] text-white relative overflow-hidden justify-between p-5 keep-dark-overlay">
       {/* Remote Video Feed */}
       <div className="absolute inset-0">
         <img

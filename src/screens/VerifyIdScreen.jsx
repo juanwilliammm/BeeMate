@@ -260,7 +260,7 @@ export default function VerifyIdScreen({ user, onUpdateUser, onCompleteRegistrat
 
           <div className="bg-[#181B22] border border-[#2E3440] rounded-4xl p-4 space-y-3.5">
             {cameraActive ? (
-              <div className="relative rounded-3xl overflow-hidden border-2 border-[#F59E0B] bg-black aspect-[1.58/1] flex flex-col justify-between">
+              <div className="relative rounded-3xl overflow-hidden border-2 border-[#F59E0B] bg-black aspect-[1.58/1] flex flex-col justify-between keep-dark-overlay">
                 <video
                   ref={videoRef}
                   autoPlay
@@ -292,7 +292,7 @@ export default function VerifyIdScreen({ user, onUpdateUser, onCompleteRegistrat
               </div>
             ) : photoDataUrl ? (
               <div className="space-y-3">
-                <div className="relative rounded-3xl overflow-hidden border-2 border-[#38BDF8] bg-black aspect-[1.58/1] shadow-2xl">
+                <div className="relative rounded-3xl overflow-hidden border-2 border-[#38BDF8] bg-black aspect-[1.58/1] shadow-2xl keep-dark-overlay">
                   <img
                     src={photoDataUrl}
                     alt="Uploaded Student ID"

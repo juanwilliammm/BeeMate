@@ -29,7 +29,9 @@ import {
   Flame,
   PhoneIncoming,
   RotateCcw,
-  ShieldCheck
+  ShieldCheck,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 const STORAGE_PREFIX = 'beemate_v2_';
@@ -96,6 +98,7 @@ export default function App() {
     return VALID_SCREENS.includes(hash) ? hash : 'splash';
   });
 
+  const [theme, setTheme] = usePersistentState('theme', 'light');
   const [user, setUser] = usePersistentState('user', INITIAL_USER);
   const [profiles] = useState(MOCK_PROFILES);
   const [swipedIds, setSwipedIds] = usePersistentState('swipedIds', []);
@@ -113,6 +116,10 @@ export default function App() {
   const [reportTarget, setReportTarget] = useState(null);
   const [notificationToast, setNotificationToast] = useState(null);
   const [showDemoDrawer, setShowDemoDrawer] = useState(false);
+
+  const handleToggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
 
   // Sync currentScreen with URL hash for native browser Back/Forward support
   const setCurrentScreen = (nextScreen) => {
@@ -454,28 +461,57 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen bg-[#08090C] flex items-center justify-center p-0 sm:p-4">
+    <div
+      className={`min-h-screen bg-[#08090C] flex items-center justify-center p-0 sm:p-4 transition-colors duration-300 ${
+        theme === 'light' ? 'theme-light' : 'theme-dark'
+      }`}
+    >
       {/* Native Mobile App Frame */}
-      <div className="w-full max-w-[420px] h-screen sm:h-[820px] bg-[#0F1115] sm:rounded-[40px] shadow-2xl shadow-black overflow-hidden flex flex-col relative sm:border-[5px] sm:border-[#222631]">
+      <div className="w-full max-w-[420px] h-screen sm:h-[820px] bg-[#0F1115] sm:rounded-[40px] shadow-2xl shadow-black/40 overflow-hidden flex flex-col relative sm:border-[5px] sm:border-[#222631] transition-colors duration-300">
         {/* Global Notification Toast */}
         {notificationToast && (
-          <div className="absolute top-4 left-4 right-4 z-50 bg-[#181B22]/95 backdrop-blur-md text-[#F3F4F6] px-4 py-3 rounded-2xl shadow-2xl border border-[#F59E0B]/50 flex items-center gap-2.5 text-xs animate-in fade-in duration-200">
+          <div className="absolute top-12 left-4 right-4 z-50 bg-[#181B22]/95 backdrop-blur-md text-[#F3F4F6] px-4 py-3 rounded-2xl shadow-2xl border border-[#F59E0B]/50 flex items-center gap-2.5 text-xs animate-in fade-in duration-200">
             <Bell size={15} className="text-[#F59E0B] shrink-0" />
             <span className="font-semibold leading-snug">{notificationToast}</span>
           </div>
         )}
 
-        {/* Floating Demo Controls Trigger (Separated from Main User UI) */}
+        {/* Floating Quick Controls: Theme Toggle (Light/Dark) + Demo Panel */}
         {currentScreen !== 'splash' && (
-          <button
-            type="button"
-            onClick={() => setShowDemoDrawer(true)}
-            title="Panel Simulasi Demo Dosen/Penguji"
-            className="absolute top-3 right-3 z-40 px-2.5 py-1.5 rounded-full bg-[#181B22]/90 backdrop-blur-md border border-[#2E3440] text-[#9CA3AF] hover:text-[#F3F4F6] hover:border-[#F59E0B]/50 flex items-center gap-1.5 text-[11px] font-bold shadow-lg cursor-pointer transition-all"
-          >
-            <SlidersHorizontal size={12} className="text-[#F59E0B]" />
-            <span>Demo</span>
-          </button>
+          <div className="absolute top-3 right-3 z-40 flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={handleToggleTheme}
+              title={
+                theme === 'light'
+                  ? 'Ganti ke Dark Mode (Gelap)'
+                  : 'Ganti ke Light Mode (Terang)'
+              }
+              className="px-2.5 py-1.5 rounded-full bg-[#181B22]/90 backdrop-blur-md border border-[#2E3440] text-[#F3F4F6] hover:border-[#F59E0B]/60 flex items-center gap-1.5 text-[11px] font-bold shadow-lg cursor-pointer transition-all"
+            >
+              {theme === 'light' ? (
+                <>
+                  <Sun size={12} className="text-[#F59E0B]" />
+                  <span>Light</span>
+                </>
+              ) : (
+                <>
+                  <Moon size={12} className="text-[#F59E0B]" />
+                  <span>Dark</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowDemoDrawer(true)}
+              title="Panel Simulasi Demo Dosen/Penguji"
+              className="px-2.5 py-1.5 rounded-full bg-[#181B22]/90 backdrop-blur-md border border-[#2E3440] text-[#9CA3AF] hover:text-[#F3F4F6] hover:border-[#F59E0B]/50 flex items-center gap-1.5 text-[11px] font-bold shadow-lg cursor-pointer transition-all"
+            >
+              <SlidersHorizontal size={12} className="text-[#F59E0B]" />
+              <span>Demo</span>
+            </button>
+          </div>
         )}
 
         {/* Active Screen Viewport */}
@@ -604,6 +640,8 @@ export default function App() {
             <ProfileScreen
               user={user}
               conversations={conversations}
+              theme={theme}
+              onToggleTheme={handleToggleTheme}
               onUpdateUser={handleUpdateUser}
               onLogout={() => {
                 showToast('Kamu telah keluar dari akun.');
@@ -686,6 +724,44 @@ export default function App() {
                 >
                   <X size={15} />
                 </button>
+              </div>
+
+              {/* 0. Theme Mode Switcher */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#F3F4F6] flex items-center gap-1.5">
+                  {theme === 'light' ? (
+                    <Sun size={14} className="text-[#F59E0B]" />
+                  ) : (
+                    <Moon size={14} className="text-[#F59E0B]" />
+                  )}
+                  Mode Tampilan (Light / Dark):
+                </label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setTheme('light')}
+                    className={`py-2 rounded-xl text-xs font-bold border cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
+                      theme === 'light'
+                        ? 'bg-[#F59E0B] text-[#0F1115] border-[#F59E0B]'
+                        : 'bg-[#222631] text-[#9CA3AF] border-[#2E3440]'
+                    }`}
+                  >
+                    <Sun size={13} />
+                    <span>Light Mode</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTheme('dark')}
+                    className={`py-2 rounded-xl text-xs font-bold border cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
+                      theme === 'dark'
+                        ? 'bg-[#F59E0B] text-[#0F1115] border-[#F59E0B]'
+                        : 'bg-[#222631] text-[#9CA3AF] border-[#2E3440]'
+                    }`}
+                  >
+                    <Moon size={13} />
+                    <span>Dark Mode</span>
+                  </button>
+                </div>
               </div>
 
               {/* 1. Admin Student ID Verification Status */}

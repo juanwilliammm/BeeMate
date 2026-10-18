@@ -71,7 +71,7 @@ export default function LoginScreen({ onLoginSuccess, onRegisterStart }) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#0F1115] text-white justify-between p-6 overflow-y-auto no-scrollbar relative">
+    <div className="flex flex-col h-full bg-[#0F1115] text-white justify-between p-6 overflow-y-auto no-scrollbar relative animate-splash-reveal">
       {/* Top Logo & Header */}
       <div className="pt-2 flex flex-col items-center text-center z-10">
         <div className="w-20 h-20 rounded-full bg-[#181B22] border-2 border-[#F59E0B]/70 flex items-center justify-center shadow-lg shadow-[#F59E0B]/15 mb-3 overflow-hidden">
@@ -80,6 +80,16 @@ export default function LoginScreen({ onLoginSuccess, onRegisterStart }) {
             alt="BeeMate"
             className="w-16 h-16 object-contain"
           />
+        </div>
+        {/* Brand Lockup */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#181B22] border border-[#2E3440] text-xs font-bold mb-2">
+          <span className="font-display font-extrabold">
+            bee<span className="text-[#F59E0B]">Mate</span>
+          </span>
+          <span className="w-[1.5px] h-3.5 bg-[#F59E0B]" />
+          <span className="text-[11px] font-semibold text-[#38BDF8]">
+            find your hive &amp; thrive
+          </span>
         </div>
         {/* Academic Blue Badge exclusively for verified campus identity */}
         <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#38BDF8]/15 border border-[#38BDF8]/40 text-[11px] font-bold text-[#38BDF8]">
