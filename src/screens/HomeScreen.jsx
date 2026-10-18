@@ -14,6 +14,7 @@ import StreakBadge from '../components/StreakBadge';
 
 export default function HomeScreen({
   user,
+  theme = 'light',
   profiles,
   swipedIds = [],
   conversations,
@@ -45,6 +46,9 @@ export default function HomeScreen({
     ? profiles.find((p) => p.id === lastConv.partnerId) || profiles[0]
     : null;
 
+  const logoSrc =
+    theme === 'light' ? '/beemate-logo-light.png' : '/beemate-logo-dark.png';
+
   return (
     <div className="flex flex-col h-full bg-[#0F1115] text-white overflow-y-auto no-scrollbar px-5 pt-5 pb-4 space-y-5">
       {/* Top Bar: Logo, User Greeting & Incoming Call Trigger */}
@@ -54,12 +58,12 @@ export default function HomeScreen({
             <img
               src={user.avatar}
               alt={user.name}
-              className="w-11 h-11 rounded-full object-cover border-2 border-[#F59E0B]"
+              className="w-11 h-11 rounded-full object-cover border border-[#2E3440]"
             />
             <img
-              src="/beemate-logo.png"
+              src={logoSrc}
               alt="BeeMate"
-              className="w-4 h-4 rounded-full bg-[#0F1115] object-contain absolute -bottom-0.5 -right-0.5 border border-[#F59E0B]"
+              className="w-4 h-4 rounded-full bg-[#0F1115] object-contain absolute -bottom-0.5 -right-0.5"
             />
           </div>
           <div>

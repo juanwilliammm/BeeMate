@@ -517,11 +517,15 @@ export default function App() {
         {/* Active Screen Viewport */}
         <main className="flex-1 overflow-hidden flex flex-col">
           {currentScreen === 'splash' && (
-            <SplashScreen onFinish={() => setCurrentScreen('login')} />
+            <SplashScreen
+              theme={theme}
+              onFinish={() => setCurrentScreen('login')}
+            />
           )}
 
           {currentScreen === 'login' && (
             <LoginScreen
+              theme={theme}
               onLoginSuccess={(email) => {
                 handleUpdateUser({ email });
                 showToast('Berhasil masuk ke akun BeeMate!');
@@ -578,6 +582,7 @@ export default function App() {
           {currentScreen === 'home' && (
             <HomeScreen
               user={user}
+              theme={theme}
               profiles={visibleProfiles}
               swipedIds={swipedIds}
               conversations={conversations}
@@ -672,6 +677,7 @@ export default function App() {
           {currentScreen === 'incoming-call' && (
             <IncomingCallScreen
               caller={activePartner}
+              theme={theme}
               streakDays={activeConversation?.streakDays || 3}
               userDndMode={user.dndMode}
               onToggleDnd={() => handleUpdateUser({ dndMode: !user.dndMode })}

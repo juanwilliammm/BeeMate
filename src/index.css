@@ -177,6 +177,17 @@ body {
   }
 }
 
+@keyframes sheet-up {
+  0% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-float-bee {
   animation: float-bee 3s ease-in-out infinite;
 }
@@ -191,4 +202,8 @@ body {
 
 .animate-splash-reveal {
   animation: splash-reveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-sheet-up {
+  animation: sheet-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }

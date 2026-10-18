@@ -11,6 +11,7 @@ import {
 
 export default function IncomingCallScreen({
   caller,
+  theme = 'light',
   streakDays = 4,
   userDndMode,
   onToggleDnd,
@@ -28,15 +29,18 @@ export default function IncomingCallScreen({
 
   if (!caller) return null;
 
+  const logoSrc =
+    theme === 'light' ? '/beemate-logo-light.png' : '/beemate-logo-dark.png';
+
   return (
     <div className="flex flex-col h-full bg-[#0F1115] text-white justify-between p-6 relative overflow-hidden">
       {/* Top Status & DND Pill */}
       <div className="flex items-center justify-between z-10">
         <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#181B22] border border-[#2E3440]">
           <img
-            src="/beemate-logo.png"
+            src={logoSrc}
             alt="BeeMate"
-            className="w-5 h-5 rounded-full object-contain"
+            className="w-5 h-5 object-contain"
           />
           <span className="text-xs font-bold text-[#F59E0B]">
             Panggilan Diskusi Video

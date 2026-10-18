@@ -1,23 +1,23 @@
 import React, { useEffect, useState } from 'react';
 
-export default function SplashScreen({ onFinish }) {
-  // Stage 1: 'logo' (center logo pops in)
-  // Stage 2: 'tagline' (animated "beeMate | find your hive & thrive" reveals)
-  // Stage 3: 'splash-out' (expanding splash transition to Login page)
-  const [stage, setStage] = useState('logo');
+export default function SplashScreen({ theme = 'light', onFinish }) {
+  // Phase 1 ('center'): BeeMate logo appears dead-center without border
+  // Phase 2 ('slide'): Logo slides left as "| find your hive & thrive" animates out to its right
+  // Phase 3 ('stacked'): Settles into Reference Image 3 Screen 1 layout (Centered Logo + "beeMate" + "find your hive & thrive" stacked below, with yellow corner circles) before transitioning to LoginScreen
+  const [phase, setPhase] = useState('center');
 
   useEffect(() => {
     const t1 = setTimeout(() => {
-      setStage('tagline');
-    }, 850);
+      setPhase('slide');
+    }, 750);
 
     const t2 = setTimeout(() => {
-      setStage('splash-out');
-    }, 2500);
+      setPhase('stacked');
+    }, 2000);
 
     const t3 = setTimeout(() => {
       onFinish();
-    }, 3100);
+    }, 3200);
 
     return () => {
       clearTimeout(t1);
@@ -26,94 +26,85 @@ export default function SplashScreen({ onFinish }) {
     };
   }, [onFinish]);
 
+  const logoSrc =
+    theme === 'light' ? '/beemate-logo-light.png' : '/beemate-logo-dark.png';
+
   return (
     <div
       onClick={onFinish}
-      className="flex flex-col h-full w-full bg-[#0F1115] text-white items-center justify-center p-6 relative overflow-hidden select-none cursor-pointer"
+      className="flex flex-col h-full w-full bg-[#0F1115] text-white items-center justify-center p-6 relative overflow-hidden select-none cursor-pointer transition-colors duration-300"
     >
-      {/* Subtle Ambient Honey Ring in Center */}
+      {/* Top-Right Amber Corner Circle (Reference Image 3 - Screen 1) */}
       <div
-        className={`absolute w-64 h-64 rounded-full bg-[#F59E0B]/10 blur-2xl pointer-events-none transition-all duration-700 ${
-          stage === 'splash-out' ? 'scale-[8] opacity-0' : 'scale-100 opacity-100'
+        className={`absolute -top-16 -right-16 w-44 h-44 rounded-full bg-[#F59E0B] pointer-events-none transition-all duration-700 ease-out ${
+          phase === 'center'
+            ? 'scale-75 opacity-80'
+            : 'scale-100 opacity-100'
         }`}
       />
 
-      {/* Stage 3 Expanding Splash Transition Portal to Login Page */}
+      {/* Bottom-Left Amber Corner Circle (Reference Image 3 - Screen 1) */}
       <div
-        className={`absolute w-24 h-24 rounded-full bg-[#F59E0B] pointer-events-none z-30 transition-all duration-700 ease-in-out ${
-          stage === 'splash-out'
-            ? 'scale-[22] opacity-100'
-            : 'scale-0 opacity-0'
+        className={`absolute -bottom-24 -left-20 w-64 h-64 rounded-full bg-[#F59E0B] pointer-events-none transition-all duration-700 ease-out ${
+          phase === 'center'
+            ? 'scale-75 opacity-80'
+            : 'scale-100 opacity-100'
         }`}
       />
 
-      {/* Centered Logo + Animated Lockup */}
-      <div
-        className={`flex flex-col items-center justify-center z-20 transition-all duration-500 ${
-          stage === 'splash-out'
-            ? 'scale-125 opacity-0 -translate-y-4'
-            : 'scale-100 opacity-100 translate-y-0'
-        }`}
-      >
-        {/* 1. Centered BeeMate Logo */}
-        <div
-          className={`relative flex items-center justify-center transition-all duration-700 ease-out ${
-            stage === 'logo'
-              ? 'scale-105 translate-y-3'
-              : 'scale-100 translate-y-0'
-          }`}
-        >
-          {/* Animated Ripple Halo */}
-          <div className="absolute inset-0 rounded-full border-2 border-[#F59E0B]/40 animate-ping opacity-30" />
-          <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-[#181B22] border-2 border-[#F59E0B]/70 flex items-center justify-center shadow-2xl animate-pulse-glow overflow-hidden">
+      {/* Center Content Container */}
+      <div className="relative z-10 flex flex-col items-center justify-center w-full px-4">
+        {/* Phase 1 & 2: Logo starts in center, then slides left as "| find your hive & thrive" expands */}
+        {phase !== 'stacked' && (
+          <div className="flex items-center justify-center">
             <img
-              src="/beemate-logo.png"
+              src={logoSrc}
               alt="BeeMate Logo"
-              className="w-28 h-28 sm:w-32 sm:h-32 object-contain animate-logo-entrance"
-            />
-          </div>
-        </div>
-
-        {/* 2. Animated "beeMate | find your hive & thrive" Lockup */}
-        <div
-          className={`mt-6 flex flex-col items-center transition-all duration-700 ease-out ${
-            stage === 'logo'
-              ? 'opacity-0 translate-y-4 pointer-events-none'
-              : 'opacity-100 translate-y-0'
-          }`}
-        >
-          <div className="flex items-center justify-center gap-3 px-4 py-2 rounded-2xl bg-[#181B22]/90 border border-[#2E3440] shadow-xl">
-            {/* Brand Name: beeMate */}
-            <span className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[#F3F4F6]">
-              bee<span className="text-[#F59E0B]">Mate</span>
-            </span>
-
-            {/* Animated Vertical Divider "|" */}
-            <span
-              className={`w-[2px] h-6 bg-[#F59E0B] rounded-full transition-transform duration-500 origin-center ${
-                stage === 'logo' ? 'scale-y-0' : 'scale-y-100'
+              className={`w-24 h-24 sm:w-28 sm:h-28 object-contain transition-all duration-700 ease-out ${
+                phase === 'center'
+                  ? 'translate-x-0 scale-105 animate-logo-entrance'
+                  : '-translate-x-2 scale-95'
               }`}
             />
 
-            {/* Animated Tagline: find your hive & thrive */}
-            <span
-              className={`text-xs sm:text-sm font-bold tracking-wide text-[#38BDF8] transition-all duration-700 delay-150 ${
-                stage === 'logo'
-                  ? 'opacity-0 -translate-x-3'
-                  : 'opacity-100 translate-x-0'
+            <div
+              className={`flex items-center overflow-hidden transition-all duration-700 ease-out ${
+                phase === 'slide'
+                  ? 'max-w-[240px] opacity-100 ml-3'
+                  : 'max-w-0 opacity-0 ml-0'
               }`}
             >
-              find your hive &amp; thrive
-            </span>
-          </div>
+              {/* Vertical Divider "|" */}
+              <span className="w-[2.5px] h-12 bg-[#F59E0B] rounded-full shrink-0" />
 
-          {/* Subtle progress indicator dots */}
-          <div className="flex items-center gap-1.5 mt-5">
-            <span className="w-2 h-2 rounded-full bg-[#F59E0B] animate-bounce [animation-delay:-0.3s]" />
-            <span className="w-2 h-2 rounded-full bg-[#F59E0B] animate-bounce [animation-delay:-0.15s]" />
-            <span className="w-2 h-2 rounded-full bg-[#F59E0B] animate-bounce" />
+              <div className="pl-3 flex flex-col justify-center whitespace-nowrap">
+                <span className="font-display text-2xl font-extrabold tracking-tight leading-none text-white">
+                  <span className="text-[#F59E0B]">bee</span>Mate
+                </span>
+                <span className="text-xs font-semibold tracking-wide text-[#94A3B8] mt-1">
+                  find your hive &amp; thrive
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Phase 3: Stacked Layout (Reference Image 3 - Screen 1: Logo on top, "beeMate" below, "find your hive & thrive" below) */}
+        {phase === 'stacked' && (
+          <div className="flex flex-col items-center text-center animate-splash-reveal">
+            <img
+              src={logoSrc}
+              alt="BeeMate Logo"
+              className="w-28 h-28 sm:w-32 sm:h-32 object-contain animate-float-bee"
+            />
+            <h1 className="font-display text-3xl sm:text-4xl font-extrabold tracking-tight mt-3 text-white">
+              <span className="text-[#F59E0B]">bee</span>Mate
+            </h1>
+            <p className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.26em] text-[#94A3B8] mt-2">
+              find your hive &amp; thrive
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
