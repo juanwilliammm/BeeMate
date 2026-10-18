@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ArrowRight, AlertCircle, GraduationCap, Edit3 } from 'lucide-react';
 import { FACULTY_MAJORS_MAP } from '../data/mockData';
+import { checkNimAvailableInCloud, formatNameFromEmail } from '../utils/supabaseClient';
 
 const FACULTY_LIST = Object.keys(FACULTY_MAJORS_MAP);
 
 export default function VerifyNimScreen({ user, onUpdateUser, onNext, onBack }) {
-  const [nim, setNim] = useState(user.nim || '2802419283');
-  const [fullName, setFullName] = useState(user.name || 'Rafi Pratama');
+  const [nim, setNim] = useState(user.nim || '');
+  const [fullName, setFullName] = useState(
+    user.name && user.name !== 'Rafi Pratama'
+      ? user.name
+      : formatNameFromEmail(user.email)
+  );
   const [faculty, setFaculty] = useState(
     user.faculty && FACULTY_MAJORS_MAP[user.faculty]
       ? user.faculty
@@ -18,6 +23,7 @@ export default function VerifyNimScreen({ user, onUpdateUser, onNext, onBack }) 
   const [manualBatch, setManualBatch] = useState('');
   const [isManualOverride, setIsManualOverride] = useState(false);
   const [error, setError] = useState('');
+  const [checkingNim, setCheckingNim] = useState(false);
 
   const availableMajors = FACULTY_MAJORS_MAP[faculty] || [];
 
@@ -51,8 +57,9 @@ export default function VerifyNimScreen({ user, onUpdateUser, onNext, onBack }) 
     setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (checkingNim) return;
 
     if (!/^\d{10}$/.test(nim)) {
       setError('NIM wajib terdiri dari tepat 10 digit angka.');
@@ -71,6 +78,17 @@ export default function VerifyNimScreen({ user, onUpdateUser, onNext, onBack }) 
 
     if (fullName.trim().length < 3) {
       setError('Masukkan nama lengkap sesuai Binusian Card.');
+      return;
+    }
+
+    setCheckingNim(true);
+    const nimCheck = await checkNimAvailableInCloud(nim, user.email);
+    setCheckingNim(false);
+
+    if (!nimCheck.available) {
+      setError(
+        `NIM ${nim} sudah terdaftar pada akun lain (${nimCheck.ownerEmail}). Gunakan 10 digit NIM milikmu sendiri.`
+      );
       return;
     }
 

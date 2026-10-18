@@ -12,6 +12,8 @@ import {
   getSupabase,
   getSupabaseConfig,
   fetchUserFromCloud,
+  fetchAllCloudUsers,
+  formatNameFromEmail,
   upsertUserToCloud,
   deleteUserFromCloud,
   mapDbRowToAppState
@@ -104,6 +106,7 @@ export default function App() {
   const [user, setUser] = usePersistentState('user', INITIAL_USER);
   const [userPassword, setUserPassword] = usePersistentState('password', 'binusian2028');
   const [profiles] = useState(MOCK_PROFILES);
+  const [cloudProfiles, setCloudProfiles] = useState([]);
   const [swipedIds, setSwipedIds] = usePersistentState('swipedIds', []);
   const [blockedIds, setBlockedIds] = usePersistentState('blockedIds', []);
   const [reports, setReports] = usePersistentState('reports', []);
@@ -293,7 +296,46 @@ export default function App() {
     });
   };
 
-  const visibleProfiles = profiles.filter((p) => !blockedIds.includes(p.id));
+  // Load all registered accounts from Supabase so real users appear in Explore/Matching
+  useEffect(() => {
+    if (!isCloudConnected) return;
+    fetchAllCloudUsers().then((rows) => {
+      const currentEmail = user?.email?.trim()?.toLowerCase();
+      const mapped = rows
+        .filter((r) => r.email && r.email.toLowerCase() !== currentEmail && r.nim)
+        .map((r) => ({
+          id: `cloud_${r.email}`,
+          email: r.email,
+          name: r.name || formatNameFromEmail(r.email),
+          faculty: r.faculty || 'School of Computer Science',
+          major: r.major || 'Computer Science',
+          batch: r.batch || '2024',
+          verified: Boolean(r.verified),
+          campus: r.campus || 'Kemanggisan (Anggrek)',
+          goal: r.goal || 'Cari partner lomba',
+          bio:
+            r.bio ||
+            `Mahasiswa ${r.major || 'Binus'} angkatan ${r.batch || '2024'} yang siap berkolaborasi di BeeMate!`,
+          interests:
+            Array.isArray(r.interests) && r.interests.length > 0
+              ? r.interests
+              : ['Web Development', 'UI/UX Design', 'Hackathon'],
+          avatar:
+            r.avatar ||
+            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80',
+          likedMe: true,
+          online: true,
+          promptQuestion: r.prompt_question || 'Target kolaborasi semester ini',
+          promptAnswer:
+            r.prompt_answer || 'Membangun proyek inovatif bersama rekan lintas jurusan',
+          portfolioTag: `Binusian ${r.batch || '2024'} · Akun Terdaftar`
+        }));
+      setCloudProfiles(mapped);
+    });
+  }, [user?.email, currentScreen, isCloudConnected]);
+
+  const allProfiles = [...cloudProfiles, ...profiles];
+  const visibleProfiles = allProfiles.filter((p) => !blockedIds.includes(p.id));
 
   const activeConversation =
     conversations.find((c) => c.id === activeConvId) || conversations[0];
@@ -691,9 +733,21 @@ export default function App() {
               }}
               onRegisterStart={(email, password) => {
                 if (password) setUserPassword(password);
-                handleUpdateUser({
+                const freshName = formatNameFromEmail(email);
+                setSwipedIds([]);
+                setBlockedIds([]);
+                setDailyLikesLeft(15);
+                setConversations(INITIAL_CONVERSATIONS);
+                setUser({
+                  ...INITIAL_USER,
                   email,
-                  verificationStatus: 'Menunggu'
+                  name: freshName,
+                  nim: '',
+                  verified: false,
+                  verificationStatus: 'Menunggu',
+                  studentIdPhoto: null,
+                  extraPhotos: [null, null, null],
+                  bio: `Halo! Aku ${freshName}, mahasiswa Binus University yang siap berkolaborasi di BeeMate.`
                 });
                 setCurrentScreen('verify-otp');
               }}

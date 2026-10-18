@@ -224,6 +224,15 @@ export function mapDbRowToAppState(row, fallbackUser, fallbackConversations) {
   };
 }
 
+export function formatNameFromEmail(email = '') {
+  const localPart = String(email).split('@')[0] || 'Mahasiswa Binus';
+  return localPart
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 export async function fetchUserFromCloud(email) {
   const supabase = getSupabase();
   if (!supabase || !email) return { data: null, error: null };
@@ -240,6 +249,40 @@ export async function fetchUserFromCloud(email) {
     return { data, error: null };
   } catch (err) {
     return { data: null, error: err };
+  }
+}
+
+export async function checkNimAvailableInCloud(nim, currentEmail = '') {
+  const supabase = getSupabase();
+  if (!supabase || !nim) return { available: true, ownerEmail: null };
+  try {
+    const { data, error } = await supabase
+      .from('beemate_users')
+      .select('email, name')
+      .eq('nim', nim.trim())
+      .maybeSingle();
+    if (error || !data) return { available: true, ownerEmail: null };
+    if (currentEmail && data.email?.toLowerCase() === currentEmail.trim().toLowerCase()) {
+      return { available: true, ownerEmail: data.email };
+    }
+    return { available: false, ownerEmail: data.email, ownerName: data.name };
+  } catch {
+    return { available: true, ownerEmail: null };
+  }
+}
+
+export async function fetchAllCloudUsers() {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('beemate_users')
+      .select('*')
+      .order('updated_at', { ascending: false });
+    if (error || !data) return [];
+    return data;
+  } catch {
+    return [];
   }
 }
 

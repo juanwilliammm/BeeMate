@@ -124,6 +124,13 @@ export default function LoginScreen({
         onLoginSuccess(cleanEmail, password, cloudRow);
         return;
       }
+
+      if (cleanEmail !== 'rafi.pratama@binus.ac.id') {
+        setErrorMsg(
+          'Akun dengan email ini belum terdaftar di database. Silakan klik "Daftar Baru" di kanan atas untuk membuat akun baru.'
+        );
+        return;
+      }
     }
 
     if (isRegisterMode) {
@@ -182,6 +189,8 @@ export default function LoginScreen({
               type="button"
               onClick={() => {
                 setErrorMsg('');
+                setEmail('');
+                setPassword('');
                 setStepView('signup');
               }}
               className="py-3.5 px-5 rounded-full bg-white hover:bg-[#F8FAFC] text-[#0F1115] font-display font-extrabold text-xs sm:text-sm shadow-lg transition-all cursor-pointer active:scale-95"
@@ -219,7 +228,13 @@ export default function LoginScreen({
             type="button"
             onClick={() => {
               setErrorMsg('');
-              setStepView(isRegisterMode ? 'signin' : 'signup');
+              if (!isRegisterMode) {
+                setEmail('');
+                setPassword('');
+                setStepView('signup');
+              } else {
+                setStepView('signin');
+              }
             }}
             className="text-xs font-extrabold text-[#0F1115] hover:underline cursor-pointer"
           >
