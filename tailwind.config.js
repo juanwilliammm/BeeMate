@@ -21,8 +21,8 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Poppins', 'Montserrat', 'sans-serif'],
-        display: ['Montserrat', 'Poppins', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
+        display: ['Capriola', 'sans-serif'],
       },
       borderRadius: {
         '4xl': '2rem',

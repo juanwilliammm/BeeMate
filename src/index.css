@@ -30,10 +30,20 @@
 }
 
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Inter', sans-serif;
   background-color: #090A0F;
   color: #ffffff;
   overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-display {
+  font-family: 'Capriola', sans-serif;
 }
 
 /* =========================================================
