@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   SlidersHorizontal,
-  X,
-  Zap,
+  ThumbsUp,
+  Star,
+  ArrowRight,
   BadgeCheck,
   Flag,
-  RotateCcw,
   MessageCircle,
   MapPin,
-  BookOpen,
-  Award,
   GraduationCap,
   Target,
-  ChevronLeft,
-  ChevronRight
+  BookOpen,
+  Award,
+  Users,
+  Zap
 } from 'lucide-react';
 import {
   FACULTIES,
@@ -22,18 +22,23 @@ import {
   BATCHES,
   GOALS,
   INTERESTS_LIST,
-  calculateMatchScore
+  calculateMatchScore,
+  normalizeInterests,
+  goalLabel
 } from '../data/mockData';
+import { Button, EmptyState, IconButton, SafeImage, Sheet, cx } from '../components/ui';
+
+const SWIPE_THRESHOLD = 90;
 
 export default function MatchingScreen({
   user,
-  theme = 'light',
   profiles,
   swipedIds,
   focusedProfileId,
   dailyLikesLeft,
   onSwipeLeft,
   onSwipeRight,
+  onLikeProfile,
   onResetSwipes,
   onOpenReportModal,
   newlyMatchedProfile,
@@ -46,98 +51,101 @@ export default function MatchingScreen({
   const [batchFilter, setBatchFilter] = useState('Semua');
   const [goalFilter, setGoalFilter] = useState('Semua');
   const [interestFilter, setInterestFilter] = useState('Semua');
+  const [detailProfile, setDetailProfile] = useState(null);
 
-  // 3 Interactive Card Slides: 0 = Profil & Bio, 1 = Prompt Akademik & Portofolio, 2 = Irisan Skill & Kampus
-  const [activeSlide, setActiveSlide] = useState(0);
+  // Profiles reviewed during this visit → drives the "x of y" stack indicator
+  const [sessionReviewed, setSessionReviewed] = useState([]);
 
-  // Pointer & Touch Drag state
-  const [dragOffset, setDragOffset] = useState(0);
-  const [startX, setStartX] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [swipeDirection, setSwipeDirection] = useState(null); // 'left' | 'right'
+  // Drag state
+  const [dragX, setDragX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [exitDir, setExitDir] = useState(null); // 'left' | 'right' | 'up'
+  const startRef = useRef(null);
+  const movedRef = useRef(false);
 
   const availableMajorsForFilter =
-    facultyFilter === 'Semua'
-      ? MAJORS
-      : ['Semua', ...(FACULTY_MAJORS_MAP[facultyFilter] || [])];
+    facultyFilter === 'Semua' ? MAJORS : ['Semua', ...(FACULTY_MAJORS_MAP[facultyFilter] || [])];
 
   const handleFacultyFilterChange = (newFac) => {
     setFacultyFilter(newFac);
     if (newFac !== 'Semua') {
       const allowed = FACULTY_MAJORS_MAP[newFac] || [];
-      if (majorFilter !== 'Semua' && !allowed.includes(majorFilter)) {
-        setMajorFilter('Semua');
-      }
+      if (majorFilter !== 'Semua' && !allowed.includes(majorFilter)) setMajorFilter('Semua');
     }
   };
 
-  const baseFiltered = profiles
-    .filter((p) => !swipedIds.includes(p.id))
-    .filter((p) => (facultyFilter === 'Semua' ? true : p.faculty === facultyFilter))
-    .filter((p) => (majorFilter === 'Semua' ? true : p.major === majorFilter))
-    .filter((p) => (batchFilter === 'Semua' ? true : p.batch === batchFilter))
-    .filter((p) => (goalFilter === 'Semua' ? true : p.goal === goalFilter))
-    .filter((p) =>
-      interestFilter === 'Semua' ? true : p.interests.includes(interestFilter)
-    );
+  const matchesFilters = (p) =>
+    (facultyFilter === 'Semua' || p.faculty === facultyFilter) &&
+    (majorFilter === 'Semua' || p.major === majorFilter) &&
+    (batchFilter === 'Semua' || p.batch === batchFilter) &&
+    (goalFilter === 'Semua' || p.goal === goalFilter) &&
+    (interestFilter === 'Semua' || normalizeInterests(p.interests).includes(interestFilter));
 
-  // If user clicked a profile from HomeScreen, prioritize that profile on top of the deck
-  const filteredProfiles = focusedProfileId
-    ? [
-        ...baseFiltered.filter((p) => p.id === focusedProfileId),
-        ...baseFiltered.filter((p) => p.id !== focusedProfileId)
-      ]
-    : baseFiltered;
+  // Rank by academic/interest compatibility (networking-first, not romantic)
+  const ranked = profiles
+    .filter(matchesFilters)
+    .map((p) => ({ ...p, matchScore: calculateMatchScore(user, p) }))
+    .sort((a, b) => b.matchScore - a.matchScore);
 
-  const currentProfile = filteredProfiles[0] || null;
-  const nextProfilePreview = filteredProfiles[1] || null;
+  const remaining = ranked.filter((p) => !swipedIds.includes(p.id));
+  const deck = focusedProfileId
+    ? [...remaining.filter((p) => p.id === focusedProfileId), ...remaining.filter((p) => p.id !== focusedProfileId)]
+    : remaining;
 
-  // Reset slide to 0 when profile changes
+  const reviewedInDeck = ranked.filter((p) => sessionReviewed.includes(p.id)).length;
+  const total = deck.length + reviewedInDeck;
+  const position = reviewedInDeck + 1;
+
+  const current = deck[0] || null;
+  const behind = deck.slice(1, 3);
+
+  const myInterests = normalizeInterests(user.interests);
+
   useEffect(() => {
-    setActiveSlide(0);
-  }, [currentProfile?.id]);
+    setDragX(0);
+    setExitDir(null);
+  }, [current?.id]);
 
-  // Unified Match Score
-  const matchPercent = calculateMatchScore(user, currentProfile);
-
-  const triggerSwipe = (dir) => {
-    if (!currentProfile || swipeDirection) return;
-    setSwipeDirection(dir);
-    setTimeout(() => {
-      if (dir === 'right') {
-        onSwipeRight(currentProfile);
-      } else {
-        onSwipeLeft(currentProfile);
-      }
-      setSwipeDirection(null);
-      setDragOffset(0);
-      setActiveSlide(0);
-    }, 240);
-  };
-
-  const handleStart = (clientX) => {
-    if (swipeDirection) return;
-    setStartX(clientX);
-    setIsDragging(true);
-  };
-
-  const handleMove = (clientX) => {
-    if (!isDragging || startX === null) return;
-    const diff = clientX - startX;
-    setDragOffset(diff);
-  };
-
-  const handleEnd = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    if (dragOffset > 85) {
-      triggerSwipe('right');
-    } else if (dragOffset < -85) {
-      triggerSwipe('left');
-    } else {
-      setDragOffset(0);
+  const commit = (dir) => {
+    if (!current || exitDir) return;
+    if (dir === 'right' && dailyLikesLeft <= 0) {
+      onSwipeRight(current); // App shows the quota toast
+      setDragX(0);
+      return;
     }
-    setStartX(null);
+    setExitDir(dir);
+    const target = current;
+    setTimeout(() => {
+      setSessionReviewed((prev) => [...prev, target.id]);
+      if (dir === 'right') onSwipeRight(target);
+      else if (dir === 'up') onLikeProfile(target);
+      else onSwipeLeft(target);
+    }, 220);
+  };
+
+  const onPointerDown = (e) => {
+    if (exitDir) return;
+    startRef.current = e.clientX;
+    movedRef.current = false;
+    setDragging(true);
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+  const onPointerMove = (e) => {
+    if (!dragging || startRef.current === null) return;
+    const dx = e.clientX - startRef.current;
+    if (Math.abs(dx) > 6) movedRef.current = true;
+    setDragX(dx);
+  };
+  const onPointerUp = () => {
+    if (!dragging) return;
+    setDragging(false);
+    startRef.current = null;
+    if (dragX > SWIPE_THRESHOLD) commit('right');
+    else if (dragX < -SWIPE_THRESHOLD) commit('left');
+    else {
+      setDragX(0);
+      if (!movedRef.current && current) setDetailProfile(current);
+    }
   };
 
   const resetAllFilters = () => {
@@ -148,521 +156,415 @@ export default function MatchingScreen({
     setInterestFilter('Semua');
   };
 
-  const activeFilterCount = [
-    facultyFilter !== 'Semua',
-    majorFilter !== 'Semua',
-    batchFilter !== 'Semua',
-    goalFilter !== 'Semua',
-    interestFilter !== 'Semua'
-  ].filter(Boolean).length;
+  const activeFilterCount = [facultyFilter, majorFilter, batchFilter, goalFilter, interestFilter].filter(
+    (v) => v !== 'Semua'
+  ).length;
 
-  const logoSrc =
-    theme === 'light' ? '/beemate-logo-light.png' : '/beemate-logo-dark.png';
+  const cardTransform =
+    exitDir === 'right'
+      ? 'translateX(140%) rotate(16deg)'
+      : exitDir === 'left'
+      ? 'translateX(-140%) rotate(-16deg)'
+      : exitDir === 'up'
+      ? 'translateY(-120%) scale(0.95)'
+      : `translateX(${dragX}px) rotate(${dragX * 0.05}deg)`;
 
   return (
-    <div className="flex flex-col h-full bg-[#0F1115] text-white relative overflow-hidden px-4 pt-4 pb-2">
+    <div className="relative h-full flex flex-col bg-surface text-ink overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3 z-20 px-1">
-        <div className="flex items-center gap-2">
-          <img
-            src={logoSrc}
-            alt="BeeMate"
-            className="w-7 h-7 object-contain"
-          />
-          <h1 className="font-display text-base font-extrabold tracking-tight">
-            Explore <span className="text-[#F59E0B]">Kolaborator</span>
-          </h1>
+      <header className="px-5 pt-6 pb-2 flex items-center justify-between">
+        <div>
+          <h1 className="text-title text-ink">Discover</h1>
+          <p className="text-caption text-ink-3 mt-0.5">Students who share your goals</p>
         </div>
-
         <div className="flex items-center gap-2">
           <span
-            title="Sisa kuota ajakan kolaborasi hari ini"
-            className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#181B22] border border-[#2E3440] text-xs font-extrabold text-[#F59E0B]"
+            title="Connection requests left today"
+            className="h-10 px-3 rounded-full bg-card border border-line inline-flex items-center gap-1 text-caption font-semibold text-ink"
           >
-            <Zap size={12} className="fill-[#F59E0B]" />
-            <span>{dailyLikesLeft}</span>
+            <Zap size={14} className="text-brand fill-brand" />
+            {dailyLikesLeft}
           </span>
-          <button
-            type="button"
-            onClick={() => setShowFilters(!showFilters)}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 border transition cursor-pointer ${
-              activeFilterCount > 0
-                ? 'bg-[#F59E0B] text-[#0F1115] border-[#F59E0B]'
-                : 'bg-[#181B22] text-white border-[#2E3440] hover:border-[#F59E0B]'
-            }`}
-          >
-            <SlidersHorizontal size={13} />
-            <span>Filter {activeFilterCount > 0 ? `(${activeFilterCount})` : ''}</span>
-          </button>
+          <IconButton label="Filters" onClick={() => setShowFilters(true)} badge={activeFilterCount > 0}>
+            <SlidersHorizontal size={17} strokeWidth={1.8} />
+          </IconButton>
         </div>
-      </div>
+      </header>
 
-      {/* Filter Modal Drawer (Linked Faculty -> Major) */}
-      {showFilters && (
-        <div className="absolute inset-x-4 top-16 z-40 bg-[#181B22] border border-[#2E3440] rounded-4xl p-5 space-y-3.5 shadow-2xl">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold text-white">Filter Kolaborator Akademik</span>
-            <button
-              type="button"
-              onClick={resetAllFilters}
-              className="text-xs font-bold text-[#F59E0B] hover:underline cursor-pointer"
-            >
-              Reset Semua
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="bg-[#222631] p-2.5 rounded-2xl border border-[#2E3440]">
-              <label className="block text-[11px] font-bold text-[#38BDF8]">Fakultas</label>
-              <select
-                value={facultyFilter}
-                onChange={(e) => handleFacultyFilterChange(e.target.value)}
-                className="w-full text-xs bg-[#222631] text-white font-semibold mt-0.5 focus:outline-none"
-              >
-                {FACULTIES.map((f) => (
-                  <option key={f} value={f}>{f}</option>
-                ))}
-              </select>
-            </div>
-            <div className="bg-[#222631] p-2.5 rounded-2xl border border-[#2E3440]">
-              <label className="block text-[11px] font-bold text-[#38BDF8]">Jurusan</label>
-              <select
-                value={majorFilter}
-                onChange={(e) => setMajorFilter(e.target.value)}
-                className="w-full text-xs bg-[#222631] text-white font-semibold mt-0.5 focus:outline-none"
-              >
-                {availableMajorsForFilter.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
-            </div>
-            <div className="bg-[#222631] p-2.5 rounded-2xl border border-[#2E3440]">
-              <label className="block text-[11px] font-bold text-[#38BDF8]">Angkatan</label>
-              <select
-                value={batchFilter}
-                onChange={(e) => setBatchFilter(e.target.value)}
-                className="w-full text-xs bg-[#222631] text-white font-semibold mt-0.5 focus:outline-none"
-              >
-                {BATCHES.map((b) => (
-                  <option key={b} value={b}>{b}</option>
-                ))}
-              </select>
-            </div>
-            <div className="bg-[#222631] p-2.5 rounded-2xl border border-[#2E3440]">
-              <label className="block text-[11px] font-bold text-[#94A3B8]">Tujuan</label>
-              <select
-                value={goalFilter}
-                onChange={(e) => setGoalFilter(e.target.value)}
-                className="w-full text-xs bg-[#222631] text-white font-semibold mt-0.5 focus:outline-none"
-              >
-                {GOALS.map((g) => (
-                  <option key={g} value={g}>{g}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="bg-[#222631] p-2.5 rounded-2xl border border-[#2E3440]">
-            <label className="block text-[11px] font-bold text-[#94A3B8]">Keahlian / Minat</label>
-            <select
-              value={interestFilter}
-              onChange={(e) => setInterestFilter(e.target.value)}
-              className="w-full text-xs bg-[#222631] text-white font-semibold mt-0.5 focus:outline-none"
-            >
-              <option value="Semua">Semua Minat</option>
-              {INTERESTS_LIST.map((item) => (
-                <option key={item} value={item}>{item}</option>
+      {/* Card stack */}
+      <div className="flex-1 min-h-0 relative flex flex-col items-center justify-center px-5 pt-2 pb-5">
+        {current ? (
+          <>
+            <div className="relative w-[84%] flex-1 min-h-0 max-h-[480px]">
+              {/* Peeking cards behind */}
+              {behind.map((p, i) => (
+                <div
+                  key={p.id}
+                  aria-hidden
+                  className="absolute inset-y-6 inset-x-0 rounded-[32px] overflow-hidden bg-subtle shadow-card"
+                  style={{
+                    transform: `translateX(${i === 0 ? 26 : -26}px) rotate(${i === 0 ? 4 : -4}deg) scale(0.92)`,
+                    zIndex: 1 - i
+                  }}
+                >
+                  <SafeImage src={p.avatar} alt="" className="w-full h-full object-cover opacity-80" />
+                </div>
               ))}
-            </select>
-          </div>
 
-          <button
-            type="button"
-            onClick={() => setShowFilters(false)}
-            className="w-full py-3 rounded-full bg-[#F59E0B] text-[#0F1115] text-xs font-extrabold cursor-pointer"
-          >
-            Terapkan ({filteredProfiles.length} Profil)
-          </button>
-        </div>
-      )}
+              {/* Active card */}
+              <article
+                key={current.id}
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+                onPointerCancel={onPointerUp}
+                style={{
+                  transform: cardTransform,
+                  transition: dragging ? 'none' : 'transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                  touchAction: 'pan-y'
+                }}
+                className="absolute inset-0 z-10 rounded-[32px] overflow-hidden bg-subtle shadow-float select-none cursor-grab active:cursor-grabbing"
+                aria-label={`${current.name}, ${current.major}. Tap for details, swipe right to connect, left for next.`}
+              >
+                <SafeImage
+                  src={current.avatar}
+                  alt={current.name}
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/20 pointer-events-none" />
 
-      {/* Structured Campus Collaboration Swipe Card */}
-      <div className="flex-1 relative flex items-center justify-center overflow-hidden">
-        {nextProfilePreview && (
-          <div className="absolute inset-x-3 inset-y-2 rounded-5xl bg-[#181B22] border border-[#2E3440] scale-95 opacity-45 pointer-events-none overflow-hidden" />
-        )}
-
-        {currentProfile ? (
-          <div
-            onMouseDown={(e) => handleStart(e.clientX)}
-            onMouseMove={(e) => handleMove(e.clientX)}
-            onMouseUp={handleEnd}
-            onMouseLeave={handleEnd}
-            onTouchStart={(e) => handleStart(e.touches[0].clientX)}
-            onTouchMove={(e) => handleMove(e.touches[0].clientX)}
-            onTouchEnd={handleEnd}
-            style={{
-              transform:
-                swipeDirection === 'right'
-                  ? 'translateX(130%) rotate(14deg)'
-                  : swipeDirection === 'left'
-                  ? 'translateX(-130%) rotate(-14deg)'
-                  : `translateX(${dragOffset}px) rotate(${dragOffset * 0.045}deg)`,
-              transition: isDragging ? 'none' : 'transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1)'
-            }}
-            className="relative w-full h-full rounded-4xl overflow-hidden bg-[#181B22] border-2 border-[#2E3440] shadow-2xl select-none cursor-grab active:cursor-grabbing flex flex-col justify-between"
-          >
-            {/* Top 50% Portrait + Academic Verification Badges */}
-            <div className="relative h-[48%] w-full shrink-0 overflow-hidden bg-[#0F1115] keep-dark-overlay">
-              <img
-                src={currentProfile.avatar}
-                alt={currentProfile.name}
-                draggable={false}
-                className="w-full h-full object-cover pointer-events-none"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/50 pointer-events-none" />
-
-              {/* Top Interactive 3-Slide Bars + Match Score + Report */}
-              <div className="absolute top-0 inset-x-0 p-4 space-y-2.5 z-20">
-                <div className="flex gap-1.5">
-                  {[0, 1, 2].map((idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveSlide(idx);
-                      }}
-                      aria-label={`Slide ${idx + 1}`}
-                      className={`h-1.5 flex-1 rounded-full transition cursor-pointer ${
-                        activeSlide === idx ? 'bg-[#F59E0B]' : 'bg-white/30 hover:bg-white/60'
-                      }`}
-                    />
-                  ))}
-                </div>
-
-                <div className="flex items-center justify-between">
-                  {/* Academic Blue Campus Pill */}
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-black/75 backdrop-blur-md border border-[#38BDF8]/50 text-xs font-bold text-[#38BDF8]">
-                    <MapPin size={12} />
-                    <span>{currentProfile.campus}</span>
-                  </span>
-
-                  <div className="flex items-center gap-2">
-                    {/* Match % Pill — Amber with --on-primary */}
-                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#F59E0B] text-[#0F1115] text-xs font-extrabold shadow-lg">
-                      <Target size={13} />
-                      <span>{matchPercent}% Cocok</span>
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenReportModal(currentProfile);
-                      }}
-                      title="Lapor atau Blokir"
-                      className="w-8 h-8 rounded-full bg-black/65 hover:bg-rose-600 text-white/85 hover:text-white backdrop-blur-md flex items-center justify-center transition cursor-pointer"
-                    >
-                      <Flag size={13} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Slide Navigation Tap Zones on Photo */}
-              <div className="absolute inset-x-0 bottom-2 px-4 flex items-end justify-between z-10">
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h2 className="font-display text-xl font-extrabold text-white tracking-tight">
-                      {currentProfile.name}
-                    </h2>
-                    {currentProfile.verified && (
-                      <BadgeCheck
-                        size={19}
-                        className="text-[#38BDF8] fill-[#0F1115] shrink-0"
-                        title="Verified Binusian"
-                      />
-                    )}
-                  </div>
-                  {/* Academic Blue Faculty / Major / Batch */}
-                  <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#38BDF8]/15 border border-[#38BDF8]/40 text-[#38BDF8] text-xs font-bold">
-                      {currentProfile.major}
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#222631] border border-[#38BDF8]/30 text-[#38BDF8] text-xs font-bold">
-                      Binusian &lsquo;{currentProfile.batch.slice(-2)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Slide Switcher Pill */}
-                <div className="flex items-center gap-1 bg-black/70 backdrop-blur-md border border-white/15 rounded-full p-1">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveSlide((s) => (s > 0 ? s - 1 : 2));
-                    }}
-                    className="p-1 text-white/80 hover:text-white cursor-pointer"
-                    aria-label="Slide sebelumnya"
-                  >
-                    <ChevronLeft size={14} />
-                  </button>
-                  <span className="text-[11px] font-bold text-[#F59E0B] px-1">
-                    {activeSlide + 1}/3
+                {/* Top row */}
+                <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between">
+                  <span className="h-7 px-2.5 rounded-full bg-black/45 backdrop-blur text-[#fff] text-meta font-semibold inline-flex items-center gap-1">
+                    <Target size={12} />
+                    {current.matchScore}% match
                   </span>
                   <button
                     type="button"
+                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setActiveSlide((s) => (s < 2 ? s + 1 : 0));
+                      onOpenReportModal(current);
                     }}
-                    className="p-1 text-white/80 hover:text-white cursor-pointer"
-                    aria-label="Slide berikutnya"
+                    aria-label="Report or block"
+                    className="w-8 h-8 rounded-full bg-black/45 backdrop-blur text-[#fff] flex items-center justify-center cursor-pointer hover:bg-black/60"
                   >
-                    <ChevronRight size={14} />
+                    <Flag size={13} />
                   </button>
                 </div>
-              </div>
-            </div>
 
-            {/* Interactive Swipe Stamps (KOLAB ⚡ / LEWATI) */}
-            {dragOffset > 45 && (
-              <div className="absolute top-20 left-6 z-30 border-4 border-[#F59E0B] bg-[#F59E0B] text-[#0F1115] font-display font-black text-xl px-4 py-1 rounded-2xl shadow-xl">
-                AJAK KOLAB ⚡
-              </div>
-            )}
-            {dragOffset < -45 && (
-              <div className="absolute top-20 right-6 z-30 border-4 border-white/80 bg-black/80 text-white font-display font-black text-xl px-4 py-1 rounded-2xl shadow-xl">
-                LEWATI ✕
-              </div>
-            )}
+                {/* Swipe hint stamps */}
+                {dragX > 40 && (
+                  <span className="absolute top-16 left-5 rotate-[-10deg] px-3 py-1 rounded-xl border-2 border-brand text-brand text-caption font-bold bg-black/30">
+                    CONNECT
+                  </span>
+                )}
+                {dragX < -40 && (
+                  <span className="absolute top-16 right-5 rotate-[10deg] px-3 py-1 rounded-xl border-2 border-[#fff] text-[#fff] text-caption font-bold bg-black/30">
+                    NEXT
+                  </span>
+                )}
 
-            {/* Bottom 52% Structured Academic Panel */}
-            <div className="flex-1 p-4 flex flex-col justify-between bg-[#181B22] overflow-y-auto no-scrollbar">
-              {activeSlide === 0 && (
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F59E0B]/15 border border-[#F59E0B]/40 text-xs font-bold text-[#F59E0B]">
-                      <Target size={13} />
-                      <span>{currentProfile.goal}</span>
+                {/* Bottom info */}
+                <div className="absolute inset-x-0 bottom-0 px-5 pb-10 pt-6 text-center">
+                  <StackIndicator position={position} total={total} />
+                  <h2 className="mt-2.5 text-[22px] leading-7 font-semibold tracking-tight text-[#fff] inline-flex items-center gap-1.5">
+                    {current.name}
+                    {current.verified && <BadgeCheck size={18} className="text-sky-300" />}
+                  </h2>
+                  <p className="text-caption text-[#fff]/80 mt-1 inline-flex items-center justify-center gap-1.5 w-full">
+                    <GraduationCap size={13} />
+                    <span className="truncate">
+                      Binus University · {current.major} ’{current.batch.slice(-2)}
                     </span>
-                    <span className="text-[11px] text-[#38BDF8] font-semibold">
-                      {currentProfile.faculty}
-                    </span>
-                  </div>
-
-                  {/* Prompt Akademik Highlight Card (Previously hidden in mockData!) */}
-                  <div className="p-3 rounded-2xl bg-[#0F1115] border border-[#2E3440] space-y-1">
-                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#38BDF8] uppercase tracking-wider">
-                      <BookOpen size={12} />
-                      <span>{currentProfile.promptQuestion}</span>
-                    </div>
-                    <p className="text-xs font-extrabold text-white leading-snug">
-                      &ldquo;{currentProfile.promptAnswer}&rdquo;
-                    </p>
-                  </div>
-
-                  <p className="text-xs text-[#94A3B8] line-clamp-2 leading-relaxed">
-                    {currentProfile.bio}
                   </p>
-                </div>
-              )}
-
-              {activeSlide === 1 && (
-                <div className="space-y-3">
-                  <div className="p-3.5 rounded-2xl bg-[#0F1115] border border-[#38BDF8]/40 space-y-1.5">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#38BDF8]">
-                      <BookOpen size={14} />
-                      <span>Fokus & Topik Akademik</span>
-                    </span>
-                    <p className="text-xs text-white/90 font-semibold leading-relaxed">
-                      {currentProfile.promptQuestion}: &ldquo;{currentProfile.promptAnswer}&rdquo;
-                    </p>
-                  </div>
-
-                  <div className="p-3.5 rounded-2xl bg-[#222631] border border-[#2E3440] space-y-1">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#F59E0B]">
-                      <Award size={14} />
-                      <span>Rekam Jejak & Organisasi</span>
-                    </span>
-                    <p className="text-xs text-white font-semibold">
-                      {currentProfile.portfolioTag || 'Aktif dalam proyek kolaborasi lintas jurusan Binusian'}
-                    </p>
+                  <p className="text-caption text-[#fff]/70 mt-1.5 line-clamp-2">{current.bio}</p>
+                  <div className="flex flex-wrap justify-center gap-1.5 mt-2.5">
+                    {normalizeInterests(current.interests)
+                      .slice(0, 3)
+                      .map((i) => {
+                        const shared = myInterests.includes(i);
+                        return (
+                          <span
+                            key={i}
+                            className={cx(
+                              'h-6 px-2.5 rounded-full text-meta font-medium inline-flex items-center',
+                              shared ? 'bg-brand text-brand-on' : 'bg-white/15 text-[#fff] backdrop-blur'
+                            )}
+                          >
+                            {i}
+                          </span>
+                        );
+                      })}
                   </div>
                 </div>
-              )}
-
-              {activeSlide === 2 && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-[#94A3B8]">Irisan Keahlian & Minat:</span>
-                    <span className="font-bold text-[#38BDF8]">
-                      <GraduationCap size={13} className="inline mr-1" />
-                      {currentProfile.campus}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1.5">
-                    {currentProfile.interests.map((interest) => {
-                      const isShared = user.interests.includes(interest);
-                      return (
-                        <span
-                          key={interest}
-                          className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            isShared
-                              ? 'bg-[#F59E0B] text-[#0F1115]'
-                              : 'bg-[#222631] text-white border border-[#2E3440]'
-                          }`}
-                        >
-                          {interest} {isShared ? '✓' : ''}
-                        </span>
-                      );
-                    })}
-                  </div>
-
-                  <p className="text-xs text-[#94A3B8]">
-                    Tap bar di atas kartu untuk melihat bio dan fokus topik akademik {currentProfile.name.split(' ')[0]}.
-                  </p>
-                </div>
-              )}
-
-              {/* Bottom Action Dock: Skip (Left) & Ajak Kolab (Right — Amber + --on-primary) */}
-              <div className="pt-2 flex items-center justify-between gap-3 border-t border-[#2E3440]">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    triggerSwipe('left');
-                  }}
-                  aria-label="Lewati Profil (Geser Kiri)"
-                  className="py-2.5 px-4 rounded-full bg-[#222631] hover:bg-[#2E3440] text-white border border-[#2E3440] flex items-center justify-center gap-1.5 text-xs font-bold transition cursor-pointer"
-                >
-                  <X size={17} strokeWidth={2.5} />
-                  <span>Lewati</span>
-                </button>
-
-                <div className="flex gap-1">
-                  {[0, 1, 2].map((dot) => (
-                    <button
-                      key={dot}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveSlide(dot);
-                      }}
-                      className={`w-2 h-2 rounded-full transition cursor-pointer ${
-                        activeSlide === dot ? 'bg-[#F59E0B] w-4' : 'bg-[#2E3440]'
-                      }`}
-                    />
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    triggerSwipe('right');
-                  }}
-                  aria-label="Ajak Kolaborasi (Geser Kanan)"
-                  className="py-2.5 px-5 rounded-full bg-[#F59E0B] hover:bg-[#FBBF24] text-[#0F1115] flex items-center justify-center gap-1.5 text-xs font-extrabold shadow-lg shadow-[#F59E0B]/25 transition cursor-pointer"
-                >
-                  <Zap size={16} className="fill-[#0F1115]" />
-                  <span>Ajak Kolab</span>
-                </button>
-              </div>
+              </article>
             </div>
-          </div>
-        ) : (
-          /* Out of Profiles State */
-          <div className="bg-[#181B22] border border-[#2E3440] p-7 rounded-4xl text-center space-y-4 max-w-xs">
-            <div className="w-16 h-16 rounded-full bg-[#F59E0B]/15 text-[#F59E0B] flex items-center justify-center mx-auto">
-              <Zap size={30} />
-            </div>
-            <h3 className="font-display text-lg font-extrabold text-white">
-              Semua Profil Sudah Ditinjau
-            </h3>
-            <p className="text-xs text-[#94A3B8] leading-relaxed">
-              Ubah filter pencarian fakultas/tujuan atau muat ulang daftar kolaborator Binusian.
-            </p>
-            <div className="space-y-2 pt-1">
-              {activeFilterCount > 0 && (
-                <button
-                  type="button"
-                  onClick={resetAllFilters}
-                  className="w-full py-3 rounded-full bg-[#F59E0B] text-[#0F1115] text-xs font-extrabold cursor-pointer"
-                >
-                  Reset Filter ({activeFilterCount})
-                </button>
-              )}
+
+            {/* Actions (overlap the card's bottom edge, as in the reference) */}
+            <div className="relative z-20 -mt-6 flex items-center gap-3">
               <button
                 type="button"
-                onClick={onResetSwipes}
-                className="w-full py-3 rounded-full bg-[#222631] hover:bg-[#2E3440] text-white text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer"
+                onClick={() => commit('up')}
+                aria-label="Like profile"
+                title="Like"
+                className="w-14 h-14 rounded-full bg-ink text-card flex items-center justify-center shadow-float hover:scale-105 transition cursor-pointer"
               >
-                <RotateCcw size={14} />
-                <span>Tampilkan Ulang Kartu</span>
+                <ThumbsUp size={20} />
+              </button>
+              <button
+                type="button"
+                onClick={() => commit('right')}
+                aria-label="Send connection request"
+                className="h-14 px-6 rounded-full bg-brand text-brand-on inline-flex items-center gap-2 font-semibold text-body shadow-float hover:brightness-105 transition cursor-pointer"
+              >
+                <Star size={18} className="fill-brand-on" />
+                Connect
+              </button>
+              <button
+                type="button"
+                onClick={() => commit('left')}
+                aria-label="Next profile"
+                title="Next"
+                className="w-14 h-14 rounded-full bg-ink text-card flex items-center justify-center shadow-float hover:scale-105 transition cursor-pointer"
+              >
+                <ArrowRight size={20} />
               </button>
             </div>
-          </div>
+          </>
+        ) : (
+          <EmptyState
+            className="w-full"
+            icon={Users}
+            title="You're all caught up"
+            text={
+              activeFilterCount
+                ? 'No more students match these filters.'
+                : 'You have reviewed every suggested student for now.'
+            }
+            actionLabel={activeFilterCount ? `Clear filters (${activeFilterCount})` : 'Show profiles again'}
+            onAction={() => {
+              if (activeFilterCount) resetAllFilters();
+              else {
+                setSessionReviewed([]);
+                onResetSwipes();
+              }
+            }}
+          />
         )}
       </div>
 
-      {/* Mutual Collaboration Match Modal */}
-      {newlyMatchedProfile && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-5 animate-in fade-in duration-200">
-          <div className="bg-[#181B22] border-2 border-[#F59E0B] rounded-4xl max-w-xs w-full p-6 text-center space-y-4 shadow-2xl">
-            <span className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-[#F59E0B] text-[#0F1115] text-xs font-extrabold">
-              <Zap size={13} className="fill-[#0F1115]" />
-              <span>KONEKSI KOLABORASI BARU!</span>
-            </span>
+      {/* Profile details */}
+      <Sheet open={Boolean(detailProfile)} onClose={() => setDetailProfile(null)} title="Profile">
+        {detailProfile && (
+          <ProfileDetail
+            profile={detailProfile}
+            myInterests={myInterests}
+            onReport={() => {
+              setDetailProfile(null);
+              onOpenReportModal(detailProfile);
+            }}
+            onConnect={() => {
+              setDetailProfile(null);
+              commit('right');
+            }}
+            onLike={() => {
+              setDetailProfile(null);
+              commit('up');
+            }}
+          />
+        )}
+      </Sheet>
 
-            <div className="flex items-center justify-center -space-x-3 py-2">
-              <img
-                src={user.avatar}
-                alt={user.name}
-                className="w-20 h-20 rounded-3xl object-cover border-2 border-white shadow-lg"
-              />
-              <img
+      {/* Filters */}
+      <Sheet
+        open={showFilters}
+        onClose={() => setShowFilters(false)}
+        title="Filters"
+        footer={
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={resetAllFilters}>
+              Reset
+            </Button>
+            <Button className="flex-[2]" onClick={() => setShowFilters(false)}>
+              Show {remaining.length} {remaining.length === 1 ? 'student' : 'students'}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-3">
+          <FilterSelect label="Faculty" value={facultyFilter} onChange={handleFacultyFilterChange} options={FACULTIES} />
+          <FilterSelect label="Major" value={majorFilter} onChange={setMajorFilter} options={availableMajorsForFilter} />
+          <div className="grid grid-cols-2 gap-3">
+            <FilterSelect label="Batch" value={batchFilter} onChange={setBatchFilter} options={BATCHES} />
+            <FilterSelect
+              label="Looking for"
+              value={goalFilter}
+              onChange={setGoalFilter}
+              options={GOALS}
+              format={goalLabel}
+            />
+          </div>
+          <FilterSelect
+            label="Interest"
+            value={interestFilter}
+            onChange={setInterestFilter}
+            options={['Semua', ...INTERESTS_LIST]}
+          />
+        </div>
+      </Sheet>
+
+      {/* New connection */}
+      {newlyMatchedProfile && (
+        <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
+          <div className="w-full max-w-xs bg-card rounded-[28px] p-6 text-center shadow-float animate-pop-in">
+            <div className="flex justify-center -space-x-4 mb-4">
+              <SafeImage src={user.avatar} alt={user.name} className="w-20 h-20 rounded-full object-cover border-4 border-card" />
+              <SafeImage
                 src={newlyMatchedProfile.avatar}
                 alt={newlyMatchedProfile.name}
-                className="w-20 h-20 rounded-3xl object-cover border-2 border-[#F59E0B] shadow-lg"
+                className="w-20 h-20 rounded-full object-cover border-4 border-card"
               />
             </div>
-
-            <div>
-              <h3 className="font-display text-lg font-extrabold text-white">
-                Terhubung dengan {newlyMatchedProfile.name.split(' ')[0]}!
-              </h3>
-              <p className="text-xs text-[#38BDF8] font-bold mt-0.5">
-                {newlyMatchedProfile.major} · Binusian &lsquo;{newlyMatchedProfile.batch.slice(-2)}
-              </p>
-              <p className="text-xs text-[#94A3B8] mt-1.5 leading-relaxed">
-                Saling berkirim pesan selama 3 hari berturut-turut untuk membuka fitur Video Call diskusi 1-on-1.
-              </p>
-            </div>
-
-            <div className="space-y-2 pt-1">
-              <button
-                type="button"
-                onClick={() => onOpenChatFromMatch(newlyMatchedProfile.id)}
-                className="w-full py-3.5 rounded-full bg-[#F59E0B] hover:bg-[#FBBF24] text-[#0F1115] text-xs font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-[#F59E0B]/25 cursor-pointer"
-              >
-                <MessageCircle size={16} />
-                <span>Mulai Diskusi Sekarang</span>
-              </button>
-              <button
-                type="button"
-                onClick={onClearNewMatch}
-                className="w-full py-3 rounded-full bg-[#222631] text-[#94A3B8] hover:text-white text-xs font-bold cursor-pointer"
-              >
-                Lanjut Explore
-              </button>
+            <p className="text-meta font-semibold text-brand-ink uppercase tracking-wide">New connection</p>
+            <h3 className="text-title text-ink mt-1">You and {newlyMatchedProfile.name.split(' ')[0]} are connected</h3>
+            <p className="text-caption text-ink-3 mt-2">
+              Chat 3 days in a row to unlock 1-on-1 video calls.
+            </p>
+            <div className="mt-5 space-y-2">
+              <Button size="lg" className="w-full" onClick={() => onOpenChatFromMatch(newlyMatchedProfile.id)}>
+                <MessageCircle size={17} /> Send a message
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={onClearNewMatch}>
+                Keep discovering
+              </Button>
             </div>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+function StackIndicator({ position, total }) {
+  if (total <= 1) return null;
+  if (total <= 8) {
+    return (
+      <div className="flex items-center justify-center gap-1.5" aria-label={`Profile ${position} of ${total}`}>
+        {Array.from({ length: total }).map((_, i) => (
+          <span
+            key={i}
+            className={cx(
+              'h-1.5 rounded-full transition-all',
+              i === position - 1 ? 'w-5 bg-[#fff]' : i < position - 1 ? 'w-1.5 bg-white/70' : 'w-1.5 bg-white/35'
+            )}
+          />
+        ))}
+      </div>
+    );
+  }
+  return (
+    <span className="text-meta font-medium text-[#fff]/80">
+      {position} / {total}
+    </span>
+  );
+}
+
+function ProfileDetail({ profile, myInterests, onReport, onConnect, onLike }) {
+  const interests = normalizeInterests(profile.interests);
+  return (
+    <div>
+      <SafeImage src={profile.avatar} alt={profile.name} className="w-full h-56 rounded-2xl object-cover" />
+      <div className="mt-4 flex items-start justify-between gap-3">
+        <div>
+          <h4 className="text-title text-ink inline-flex items-center gap-1.5">
+            {profile.name}
+            {profile.verified && <BadgeCheck size={18} className="text-sky-500" />}
+          </h4>
+          <p className="text-caption text-ink-2 mt-0.5">
+            {profile.major} · Binusian ’{profile.batch.slice(-2)}
+          </p>
+          <p className="text-caption text-ink-3 mt-0.5 inline-flex items-center gap-1">
+            <MapPin size={12} /> {profile.campus}
+          </p>
+        </div>
+        <span className="h-7 px-2.5 rounded-full bg-brand-soft text-brand-ink text-meta font-semibold inline-flex items-center shrink-0">
+          {profile.matchScore ?? ''}% match
+        </span>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-line divide-y divide-line">
+        <InfoRow icon={Target} label="Looking for" value={goalLabel(profile.goal)} />
+        <InfoRow icon={BookOpen} label={profile.promptQuestion} value={profile.promptAnswer} />
+        {profile.portfolioTag && <InfoRow icon={Award} label="Highlights" value={profile.portfolioTag} />}
+      </div>
+
+      <p className="text-body text-ink-2 mt-4">{profile.bio}</p>
+
+      <p className="text-caption font-semibold text-ink mt-4 mb-2">Interests</p>
+      <div className="flex flex-wrap gap-1.5">
+        {interests.map((i) => {
+          const shared = myInterests.includes(i);
+          return (
+            <span
+              key={i}
+              className={cx(
+                'h-7 px-3 rounded-full text-caption border inline-flex items-center',
+                shared ? 'border-brand bg-brand-soft text-brand-ink font-medium' : 'border-line text-ink-2'
+              )}
+            >
+              {i}
+            </span>
+          );
+        })}
+      </div>
+
+      <div className="mt-6 flex gap-2">
+        <Button variant="outline" className="flex-1" onClick={onLike}>
+          <ThumbsUp size={15} /> Like
+        </Button>
+        <Button className="flex-[1.6]" onClick={onConnect}>
+          <Star size={15} /> Connect
+        </Button>
+      </div>
+      <button
+        type="button"
+        onClick={onReport}
+        className="w-full mt-3 py-2 text-caption text-ink-3 hover:text-danger inline-flex items-center justify-center gap-1.5 cursor-pointer"
+      >
+        <Flag size={13} /> Report or block
+      </button>
+    </div>
+  );
+}
+
+function InfoRow({ icon: Icon, label, value }) {
+  return (
+    <div className="flex gap-3 px-3.5 py-3">
+      <Icon size={16} className="text-ink-3 shrink-0 mt-0.5" />
+      <div className="min-w-0">
+        <p className="text-meta text-ink-3">{label}</p>
+        <p className="text-caption text-ink font-medium mt-0.5">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function FilterSelect({ label, value, onChange, options, format = (v) => (v === 'Semua' ? 'All' : v) }) {
+  return (
+    <label className="block">
+      <span className="text-meta font-medium text-ink-3">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-1 w-full h-11 px-3 rounded-xl bg-subtle border border-line text-body text-ink focus:outline-none focus:border-brand cursor-pointer"
+      >
+        {options.map((o) => (
+          <option key={o} value={o}>
+            {format(o)}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

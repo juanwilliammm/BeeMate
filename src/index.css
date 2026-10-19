@@ -14,6 +14,21 @@
   --surface-card: #181B22;
   --surface-elevated: #222631;
   --surface-border: #2E3440;
+
+  /* BeeMate design tokens (RGB channels, consumed by tailwind.config.js) */
+  --surface: 15 17 21;
+  --card: 24 27 34;
+  --subtle: 34 38 49;
+  --line: 46 52 64;
+  --ink: 243 244 246;
+  --ink-2: 156 163 175;
+  --ink-3: 107 114 128;
+  --brand: 245 158 11;
+  --brand-ink: 251 191 36;
+  --brand-soft: 58 44 16;
+  --brand-on: 17 17 17;
+  --success: 52 211 153;
+  --danger: 248 113 113;
 }
 
 .theme-light {
@@ -27,15 +42,32 @@
   --surface-card: #FFFFFF;
   --surface-elevated: #F1F5F9;
   --surface-border: #E2E8F0;
+
+  --surface: 247 247 249;
+  --card: 255 255 255;
+  --subtle: 241 242 245;
+  --line: 230 232 236;
+  --ink: 17 24 39;
+  --ink-2: 75 85 99;
+  --ink-3: 140 148 160;
+  --brand: 245 158 11;
+  --brand-ink: 180 83 9;
+  --brand-soft: 254 243 214;
+  --brand-on: 17 17 17;
+  --success: 16 185 129;
+  --danger: 220 38 38;
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
   background-color: #090A0F;
   color: #ffffff;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11', 'ss01';
 }
 
+/* Unified typography: a single sans-serif family across the whole app */
 h1,
 h2,
 h3,
@@ -43,7 +75,42 @@ h4,
 h5,
 h6,
 .font-display {
-  font-family: 'Capriola', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Safe-area padding for notched devices */
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: 200px 0; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.18s ease-out both;
+}
+
+.animate-pop-in {
+  animation: pop-in 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, rgb(var(--subtle)) 0px, rgb(var(--line)) 80px, rgb(var(--subtle)) 160px);
+  background-size: 400px 100%;
+  animation: shimmer 1.2s linear infinite;
 }
 
 /* =========================================================

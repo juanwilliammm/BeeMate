@@ -1,55 +1,46 @@
 import React from 'react';
-import { Home, Compass, MessageCircle, User } from 'lucide-react';
+import { Home, Compass, MessageCircle, Users, User } from 'lucide-react';
 
-export default function BottomNav({ currentScreen, onNavigate, unreadTotal }) {
-  const navItems = [
-    { id: 'home', label: 'Beranda', icon: Home },
-    { id: 'matching', label: 'Explore', icon: Compass },
-    { id: 'messages', label: 'Chat', icon: MessageCircle, badge: unreadTotal },
-    { id: 'profile', label: 'Profil', icon: User },
-  ];
+export const NAV_ITEMS = [
+  { id: 'home', label: 'Home', icon: Home },
+  { id: 'matching', label: 'Discover', icon: Compass },
+  { id: 'messages', label: 'Chats', icon: MessageCircle, badgeKey: 'chats' },
+  { id: 'groups', label: 'Groups', icon: Users, badgeKey: 'groups' },
+  { id: 'profile', label: 'Profile', icon: User }
+];
+
+export default function BottomNav({ currentScreen, onNavigate, unreadTotal = 0, groupUnread = 0 }) {
+  const badges = { chats: unreadTotal, groups: groupUnread };
 
   return (
-    <div className="px-5 pb-3.5 pt-2 bg-[#0F1115] border-t border-[#2E3440]/60 shrink-0 z-30">
-      <nav
-        aria-label="Navigasi Utama"
-        className="bg-[#181B22] border border-[#2E3440] rounded-full p-1.5 flex items-center justify-between shadow-xl"
-      >
-        {navItems.map((item) => {
+    <div className="px-4 pt-2 pb-safe bg-card border-t border-line shrink-0 z-30">
+      <nav aria-label="Main navigation" className="flex items-center justify-between gap-1">
+        {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = currentScreen === item.id;
+          const badge = item.badgeKey ? badges[item.badgeKey] : 0;
           return (
             <button
               key={item.id}
               type="button"
               onClick={() => onNavigate(item.id)}
               aria-label={item.label}
-              className={`relative flex items-center justify-center gap-2 py-2.5 px-4 rounded-full transition-all duration-200 cursor-pointer ${
+              aria-current={isActive ? 'page' : undefined}
+              className={`relative h-10 flex items-center justify-center gap-1.5 rounded-full transition-all duration-200 cursor-pointer ${
                 isActive
-                  ? 'bg-[#F59E0B] text-[#0F1115] font-extrabold shadow-lg shadow-[#F59E0B]/25'
-                  : 'text-[#94A3B8] hover:text-white font-semibold'
+                  ? 'bg-brand-soft text-brand-ink px-4'
+                  : 'text-ink-3 hover:text-ink px-3'
               }`}
             >
-              <div className="relative flex items-center">
-                <Icon
-                  size={19}
-                  strokeWidth={isActive ? 2.5 : 2}
-                />
-                {item.badge > 0 && (
-                  <span
-                    className={`absolute -top-2 -right-2.5 text-[11px] font-extrabold px-1.5 rounded-full min-w-[18px] h-[18px] flex items-center justify-center ${
-                      isActive
-                        ? 'bg-[#0F1115] text-[#F59E0B]'
-                        : 'bg-[#F59E0B] text-[#0F1115]'
-                    }`}
-                  >
-                    {item.badge}
+              <span className="relative flex items-center">
+                <Icon size={20} strokeWidth={isActive ? 2.2 : 1.8} />
+                {badge > 0 && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-brand text-brand-on text-[10px] font-semibold flex items-center justify-center ring-2 ring-card">
+                    {badge > 9 ? '9+' : badge}
                   </span>
                 )}
-              </div>
-              {isActive && (
-                <span className="text-xs tracking-wide">{item.label}</span>
-              )}
+              </span>
+              {isActive && <span className="text-caption font-semibold">{item.label}</span>}
             </button>
           );
         })}

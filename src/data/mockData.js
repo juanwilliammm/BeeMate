@@ -43,28 +43,71 @@ export const GOALS = [
   'Sekadar ngobrol'
 ];
 
-export const INTERESTS_LIST = [
-  'UI/UX Design',
-  'Web Development',
-  'Machine Learning',
-  'Hackathon',
-  'Business Case',
-  'Data Analytics',
-  'Mobile App',
-  'Public Speaking',
-  'Cyber Security',
-  'Copywriting',
-  'Fotografi',
-  'E-Sports',
-  'Musik & Band',
-  'Riset Akademik'
+// Display labels for goals (stored values stay unchanged for data compatibility)
+export const GOAL_LABELS = {
+  Semua: 'All goals',
+  'Cari teman belajar': 'Study buddy',
+  'Cari partner lomba': 'Competition teammate',
+  'Partner tugas kelompok': 'Group project partner',
+  'Kolaborasi organisasi': 'Organization collab',
+  'Sekadar ngobrol': 'Just networking'
+};
+
+export const goalLabel = (g) => GOAL_LABELS[g] || g;
+
+// Interest tags shown on the Interest Selection screen (label + small icon)
+export const INTEREST_OPTIONS = [
+  { label: 'Programming', icon: '💻' },
+  { label: 'Web Development', icon: '🌐' },
+  { label: 'Mobile App', icon: '📱' },
+  { label: 'UI/UX Design', icon: '🎨' },
+  { label: 'Graphic Design', icon: '🖌️' },
+  { label: 'Machine Learning', icon: '🤖' },
+  { label: 'Data Analytics', icon: '📊' },
+  { label: 'Cyber Security', icon: '🔐' },
+  { label: 'Technology', icon: '⚙️' },
+  { label: 'Hackathon', icon: '🏆' },
+  { label: 'Business Case', icon: '💼' },
+  { label: 'Entrepreneurship', icon: '🚀' },
+  { label: 'Finance', icon: '💰' },
+  { label: 'Public Speaking', icon: '🎤' },
+  { label: 'Copywriting', icon: '✍️' },
+  { label: 'Academic Research', icon: '🔬' },
+  { label: 'Mathematics', icon: '📐' },
+  { label: 'Photography', icon: '📷' },
+  { label: 'Music', icon: '🎵' },
+  { label: 'Gaming', icon: '🎮' },
+  { label: 'Sports', icon: '🏀' },
+  { label: 'Fitness', icon: '💪' },
+  { label: 'Travel', icon: '✈️' }
 ];
+
+export const INTERESTS_LIST = INTEREST_OPTIONS.map((o) => o.label);
+
+export const MIN_INTERESTS = 2;
+
+// Older builds stored Indonesian labels — map them so saved data keeps matching.
+const LEGACY_INTEREST_ALIASES = {
+  Fotografi: 'Photography',
+  'Musik & Band': 'Music',
+  'Riset Akademik': 'Academic Research',
+  'E-Sports': 'Gaming'
+};
+
+export function normalizeInterests(list = []) {
+  const mapped = (list || []).map((i) => LEGACY_INTEREST_ALIASES[i] || i);
+  return [...new Set(mapped)];
+}
+
+export function getInterestIcon(label) {
+  return INTEREST_OPTIONS.find((o) => o.label === label)?.icon || '•';
+}
 
 // Single source of truth for Match Compatibility Score across Home & Matching screens
 export function calculateMatchScore(user, candidate) {
   if (!user || !candidate) return 75;
-  const userInterests = user.interests || [];
-  const candidateInterests = candidate.interests || [];
+  const userInterests = normalizeInterests(user.interests);
+  const candidateInterests = normalizeInterests(candidate.interests);
   const sharedCount = candidateInterests.filter((i) =>
     userInterests.includes(i)
   ).length;
@@ -129,7 +172,7 @@ export const MOCK_PROFILES = [
     campus: 'Kemanggisan (Anggrek)',
     goal: 'Cari partner lomba',
     bio: 'UI/UX enthusiast yang butuh partner developer buat bikin produk digital & ikut lomba UI/UX nasional. Sering nongkrong di coworking space Syahdan!',
-    interests: ['UI/UX Design', 'Hackathon', 'Fotografi', 'Copywriting'],
+    interests: ['UI/UX Design', 'Hackathon', 'Photography', 'Copywriting'],
     avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop&q=80',
     likedMe: true,
     online: true,
@@ -165,7 +208,7 @@ export const MOCK_PROFILES = [
     campus: 'Kemanggisan (Anggrek)',
     goal: 'Cari teman belajar',
     bio: 'Mahasiswa semester 3 yang lagi mendalami Python, Machine Learning, dan Kalkulus. Cari teman belajar bareng menjelang UTS/UAS.',
-    interests: ['Machine Learning', 'Data Analytics', 'Riset Akademik', 'Web Development'],
+    interests: ['Machine Learning', 'Data Analytics', 'Academic Research', 'Programming'],
     avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&auto=format&fit=crop&q=80',
     likedMe: true,
     online: false,
@@ -183,7 +226,7 @@ export const MOCK_PROFILES = [
     campus: 'Kemanggisan (Syahdan)',
     goal: 'Partner tugas kelompok',
     bio: 'Aktif di CSC (Cyber Security Community). Suka bahas CTF, Network Security, dan Cloud Architecture. Santai diajak diskusi proyek.',
-    interests: ['Cyber Security', 'Web Development', 'Hackathon', 'E-Sports'],
+    interests: ['Cyber Security', 'Web Development', 'Hackathon', 'Gaming'],
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&auto=format&fit=crop&q=80',
     likedMe: false,
     online: true,
@@ -201,7 +244,7 @@ export const MOCK_PROFILES = [
     campus: 'Kemanggisan (Kijang)',
     goal: 'Kolaborasi organisasi',
     bio: 'Mahasiswa Psikologi 2026! Pengen kenal teman lintas jurusan buat kepanitiaan event kampus dan UX Research perilaku pengguna.',
-    interests: ['UI/UX Design', 'Public Speaking', 'Riset Akademik', 'Musik & Band'],
+    interests: ['UI/UX Design', 'Public Speaking', 'Academic Research', 'Music'],
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&auto=format&fit=crop&q=80',
     likedMe: true,
     online: true,
@@ -219,7 +262,7 @@ export const MOCK_PROFILES = [
     campus: 'Bekasi',
     goal: 'Sekadar ngobrol',
     bio: 'Tertarik sama supply chain, optimasi sistem, dan manajemen produk. Kapan saja siap diajak diskusi sambil bahas persiapan magang.',
-    interests: ['Data Analytics', 'Business Case', 'Mobile App', 'Fotografi'],
+    interests: ['Data Analytics', 'Business Case', 'Finance', 'Photography'],
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600&auto=format&fit=crop&q=80',
     likedMe: true,
     online: false,

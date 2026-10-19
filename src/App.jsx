@@ -5,6 +5,7 @@ import {
   INITIAL_CONVERSATIONS,
   generatePartnerReply
 } from './data/mockData';
+import { MOCK_GROUPS } from './data/communityData';
 import BottomNav from './components/BottomNav';
 import ReportBlockModal from './components/ReportBlockModal';
 import SupabaseConfigModal from './components/SupabaseConfigModal';
@@ -23,15 +24,17 @@ import {
   syncAllLocalStudentIdsToCloud
 } from './utils/studentIdDb';
 
-// Splash Screen + 11 PRD Screens
+// Screens
 import SplashScreen from './screens/SplashScreen';
 import LoginScreen from './screens/LoginScreen';
 import VerifyOtpScreen from './screens/VerifyOtpScreen';
 import VerifyNimScreen from './screens/VerifyNimScreen';
 import VerifyIdScreen from './screens/VerifyIdScreen';
+import InterestsScreen from './screens/InterestsScreen';
 import HomeScreen from './screens/HomeScreen';
 import MatchingScreen from './screens/MatchingScreen';
 import MessagesScreen from './screens/MessagesScreen';
+import GroupsScreen from './screens/GroupsScreen';
 import ChatScreen from './screens/ChatScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import VideoCallScreen from './screens/VideoCallScreen';
@@ -87,9 +90,11 @@ const VALID_SCREENS = [
   'verify-otp',
   'verify-nim',
   'verify-id',
+  'interests',
   'home',
   'matching',
   'messages',
+  'groups',
   'chat',
   'profile',
   'video-call',
@@ -116,6 +121,13 @@ export default function App() {
     INITIAL_CONVERSATIONS
   );
   const [activeConvId, setActiveConvId] = usePersistentState('activeConvId', 'c1');
+
+  // Community & Events state (Home & Groups)
+  const [groups, setGroups] = usePersistentState('groups', MOCK_GROUPS);
+  const [registeredEventIds, setRegisteredEventIds] = usePersistentState('registeredEventIds', ['e1']);
+  const [savedEventIds, setSavedEventIds] = usePersistentState('savedEventIds', []);
+  const [joinedRoomIds, setJoinedRoomIds] = usePersistentState('joinedRoomIds', ['r1']);
+  const [joinedLiveIds, setJoinedLiveIds] = usePersistentState('joinedLiveIds', []);
 
   const [focusedProfileId, setFocusedProfileId] = useState(null);
   const [newlyMatchedProfile, setNewlyMatchedProfile] = useState(null);
@@ -190,16 +202,13 @@ export default function App() {
     let active = true;
 
     (async () => {
-      // 1. Migrate any local IndexedDB / LocalStorage student ID photos to Supabase
       const migratedRecords = await syncAllLocalStudentIdsToCloud(user);
       const matchingMigrated = migratedRecords.find((r) => r.nim === user.nim) || migratedRecords[0];
 
-      // 2. Fetch existing cloud row
       const { data: cloudRow } = await fetchUserFromCloud(cleanEmail);
       if (!active) return;
 
       if (cloudRow) {
-        // If local browser had a studentIdPhoto that cloudRow doesn't have yet, push it to cloud
         const mergedRow = {
           ...cloudRow,
           student_id_photo:
@@ -220,7 +229,6 @@ export default function App() {
           });
         }
       } else {
-        // Seed initial user state to Supabase if not yet in cloud
         await upsertUserToCloud({
           user: {
             ...user,
@@ -344,6 +352,9 @@ export default function App() {
     MOCK_PROFILES[0];
 
   const unreadTotal = conversations.reduce((sum, c) => sum + c.unreadCount, 0);
+  const groupUnread = groups
+    .filter((g) => g.joined)
+    .reduce((sum, g) => sum + (g.unread || 0), 0);
 
   // Matching Swipe Logic
   const handleSwipeLeft = (profile) => {
@@ -353,9 +364,17 @@ export default function App() {
     }
   };
 
+  const handleLikeProfile = (profile) => {
+    setSwipedIds((prev) => (prev.includes(profile.id) ? prev : [...prev, profile.id]));
+    if (focusedProfileId === profile.id) {
+      setFocusedProfileId(null);
+    }
+    showToast(`Liked ${profile.name.split(' ')[0]}'s profile!`);
+  };
+
   const handleSwipeRight = (profile) => {
     if (dailyLikesLeft <= 0) {
-      showToast('Kuota ajak kolaborasi harian kamu sudah habis.');
+      showToast('Daily connection quota reached.');
       return;
     }
     setDailyLikesLeft((d) => Math.max(0, d - 1));
@@ -377,25 +396,18 @@ export default function App() {
           sentByPartnerToday: false,
           streakIncrementedToday: false,
           unreadCount: 0,
-          lastUpdated: 'Baru saja',
+          lastUpdated: 'Just now',
           icebreakers: [
-            `Halo ${profile.name.split(' ')[0]}! Kita sama-sama ingin ${profile.goal}, yuk diskusi!`,
-            `Hai ${profile.name.split(' ')[0]}! Topik "${profile.promptAnswer}" menarik banget!`
+            `Hi ${profile.name.split(' ')[0]}! We share similar academic interests, let's connect!`,
+            `Hey ${profile.name.split(' ')[0]}! Your focus on "${profile.promptAnswer}" sounds great!`
           ],
           messages: []
         };
         setConversations((prev) => [newConv, ...prev]);
       }
     } else {
-      showToast(
-        `Ajakan kolaborasi dikirim ke ${profile.name.split(' ')[0]}! Menunggu respon.`
-      );
+      showToast(`Connection request sent to ${profile.name.split(' ')[0]}!`);
     }
-  };
-
-  const handleInspectProfileInDeck = (profileId) => {
-    setFocusedProfileId(profileId);
-    setCurrentScreen('matching');
   };
 
   const handleOpenChat = (convId) => {
@@ -474,9 +486,8 @@ export default function App() {
           prev.map((c) => {
             if (c.id !== convId) return c;
             const nextSentByMe = Boolean(c.sentByMeToday);
-            const nextSentByPartner = true;
             const shouldIncrementStreak =
-              nextSentByMe && nextSentByPartner && !c.streakIncrementedToday;
+              nextSentByMe && !c.streakIncrementedToday;
             const nextStreak = shouldIncrementStreak
               ? c.streakDays + 1
               : c.streakDays;
@@ -507,6 +518,107 @@ export default function App() {
     }
   };
 
+  // Community & Events handlers
+  const handleToggleRegisterEvent = (eventId, title) => {
+    setRegisteredEventIds((prev) => {
+      const exists = prev.includes(eventId);
+      showToast(exists ? `Cancelled registration for ${title}` : `Registered for ${title}!`);
+      return exists ? prev.filter((id) => id !== eventId) : [...prev, eventId];
+    });
+  };
+
+  const handleToggleSaveEvent = (eventId) => {
+    setSavedEventIds((prev) =>
+      prev.includes(eventId) ? prev.filter((id) => id !== eventId) : [...prev, eventId]
+    );
+  };
+
+  const handleToggleRoom = (roomId, name) => {
+    setJoinedRoomIds((prev) => {
+      const exists = prev.includes(roomId);
+      showToast(exists ? `Left room: ${name}` : `Joined room: ${name}`);
+      return exists ? prev.filter((id) => id !== roomId) : [...prev, roomId];
+    });
+  };
+
+  const handleToggleLive = (liveId, title) => {
+    setJoinedLiveIds((prev) => {
+      const exists = prev.includes(liveId);
+      showToast(exists ? `Left live event: ${title}` : `Joined live event: ${title}`);
+      return exists ? prev.filter((id) => id !== liveId) : [...prev, liveId];
+    });
+  };
+
+  const handleJoinGroup = (groupId, clearUnreadOnly = false) => {
+    setGroups((prev) =>
+      prev.map((g) => {
+        if (g.id !== groupId) return g;
+        if (clearUnreadOnly) return { ...g, unread: 0 };
+        showToast(`Joined ${g.name}!`);
+        return {
+          ...g,
+          joined: true,
+          members: g.members + 1,
+          unread: 0,
+          lastMessage: g.lastMessage || 'You joined the group',
+          lastTime: 'Just now'
+        };
+      })
+    );
+  };
+
+  const handleLeaveGroup = (groupId) => {
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === groupId ? { ...g, joined: false, members: Math.max(1, g.members - 1) } : g
+      )
+    );
+    showToast('Left group.');
+  };
+
+  const handleSendGroupMessage = (groupId, text, senderName) => {
+    const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    setGroups((prev) =>
+      prev.map((g) => {
+        if (g.id !== groupId) return g;
+        const existing = g.messages || [
+          {
+            id: 'gm-seed',
+            sender: (g.admins && g.admins[0]) || 'Admin',
+            text: g.lastMessage || `Welcome to ${g.name}!`,
+            time: g.lastTime || '19:25'
+          }
+        ];
+        return {
+          ...g,
+          lastMessage: `${senderName}: ${text}`,
+          lastTime: time,
+          unread: 0,
+          messages: [...existing, { id: `gm-${Date.now()}`, sender: senderName, text, time }]
+        };
+      })
+    );
+  };
+
+  const handleCreateGroup = ({ name, category }) => {
+    const newGroup = {
+      id: `g-${Date.now()}`,
+      name,
+      category,
+      icon: 'Code2',
+      tint: '#F59E0B',
+      members: 1,
+      admins: [user.name.split(' ')[0]],
+      adminAvatars: [user.avatar],
+      lastMessage: 'Group created · Invite your classmates!',
+      lastTime: 'Just now',
+      unread: 0,
+      joined: true
+    };
+    setGroups((prev) => [newGroup, ...prev]);
+    showToast(`Created group "${name}"!`);
+  };
+
   const handleIncrementStreak = (convId) => {
     setConversations((prev) =>
       prev.map((c) => {
@@ -532,7 +644,7 @@ export default function App() {
   // Enforce 3-Day Streak & DND Guard on Incoming Video Call
   const handleTriggerIncomingCall = () => {
     if (user.dndMode) {
-      showToast('Mode Jangan Ganggu (DND) aktif: Panggilan masuk diheningkan.');
+      showToast('Do Not Disturb (DND) is active: incoming calls are muted.');
       return;
     }
 
@@ -542,9 +654,7 @@ export default function App() {
         : conversations.find((c) => c.streakDays >= 3);
 
     if (!eligibleConv) {
-      showToast(
-        '🔒 Video Call terkunci: Belum ada partner dengan Streak minimal 3 hari.'
-      );
+      showToast('🔒 Video Call requires at least a 3-day chat streak.');
       return;
     }
 
@@ -628,13 +738,48 @@ export default function App() {
     setReports([]);
     setDailyLikesLeft(15);
     setConversations(INITIAL_CONVERSATIONS);
+    setGroups(MOCK_GROUPS);
+    setRegisteredEventIds(['e1']);
+    setSavedEventIds([]);
+    setJoinedRoomIds(['r1']);
+    setJoinedLiveIds([]);
     setActiveConvId('c1');
     setFocusedProfileId(null);
     setShowDemoDrawer(false);
-    showToast('Data demo berhasil direset ke kondisi awal.');
+    showToast('Demo data reset to initial state.');
   };
 
-  const showBottomNav = ['home', 'matching', 'messages', 'profile'].includes(
+  // Shared Quick Action Menu callbacks for Chats & Groups
+  const quickActions = {
+    onStartMessage: () => {
+      if (conversations.length > 0) {
+        handleOpenChat(conversations[0].id);
+      } else {
+        setCurrentScreen('matching');
+      }
+    },
+    onCreateGroup: () => {
+      setCurrentScreen('groups');
+      showToast('Use "Create group" in Groups to start a new community.');
+    },
+    onAddContact: () => {
+      setCurrentScreen('matching');
+    },
+    onMakeCall: () => {
+      const eligible =
+        activeConversation?.streakDays >= 3
+          ? activeConversation
+          : conversations.find((c) => c.streakDays >= 3);
+      if (eligible) {
+        setActiveConvId(eligible.id);
+        setCurrentScreen('video-call');
+      } else {
+        showToast('🔒 Reach a 3-day chat streak with a peer to unlock video calls.');
+      }
+    }
+  };
+
+  const showBottomNav = ['home', 'matching', 'messages', 'groups', 'profile'].includes(
     currentScreen
   );
 
@@ -644,51 +789,47 @@ export default function App() {
         theme === 'light' ? 'theme-light' : 'theme-dark'
       }`}
     >
-      {/* Native Mobile App Frame — Constrained to viewport height so BottomNav is ALWAYS visible without scrolling */}
-      <div className="w-full max-w-[420px] h-[100dvh] sm:h-[calc(100dvh-1.5rem)] sm:max-h-[820px] bg-[#0F1115] sm:rounded-[40px] shadow-2xl shadow-black/40 overflow-hidden flex flex-col relative sm:border-[5px] sm:border-[#222631] transition-colors duration-300">
+      {/* Native Mobile App Frame */}
+      <div className="w-full max-w-[420px] h-[100dvh] sm:h-[calc(100dvh-1.5rem)] sm:max-h-[820px] bg-surface sm:rounded-[40px] shadow-2xl shadow-black/40 overflow-hidden flex flex-col relative sm:border-[5px] sm:border-[#222631] transition-colors duration-300">
         {/* Global Notification Toast */}
         {notificationToast && (
-          <div className="absolute top-12 left-4 right-4 z-50 bg-[#181B22]/95 backdrop-blur-md text-[#F3F4F6] px-4 py-3 rounded-2xl shadow-2xl border border-[#F59E0B]/50 flex items-center gap-2.5 text-xs animate-in fade-in duration-200">
-            <Bell size={15} className="text-[#F59E0B] shrink-0" />
-            <span className="font-semibold leading-snug">{notificationToast}</span>
+          <div className="absolute top-12 left-4 right-4 z-50 bg-card/95 backdrop-blur-md text-ink px-4 py-3 rounded-2xl shadow-float border border-brand/50 flex items-center gap-2.5 text-caption animate-fade-in">
+            <Bell size={15} className="text-brand shrink-0" />
+            <span className="font-medium leading-snug">{notificationToast}</span>
           </div>
         )}
 
-        {/* Floating Quick Controls: Cloud Sync + Theme Toggle (Light/Dark) + Demo Panel */}
+        {/* Compact Utility Controls (Cloud / Theme / QA Demo) — positioned top-center so screen headers stay clean */}
         {currentScreen !== 'splash' && (
-          <div className="absolute top-3 right-3 z-40 flex items-center gap-1.5">
+          <div className="absolute top-1.5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 opacity-75 hover:opacity-100 transition-opacity">
             <button
               type="button"
               onClick={() => setShowCloudModal(true)}
-              title="Pengaturan Database Cloud (Supabase)"
-              className={`px-2.5 py-1.5 rounded-full bg-[#181B22]/90 backdrop-blur-md border flex items-center gap-1.5 text-[11px] font-bold shadow-lg cursor-pointer transition-all ${
+              title="Cloud Sync (Supabase)"
+              className={`px-2 py-0.5 rounded-full bg-card/90 backdrop-blur border flex items-center gap-1 text-[10px] font-semibold shadow-sm cursor-pointer transition-all ${
                 isCloudConnected
-                  ? 'border-[#38BDF8]/60 text-[#38BDF8]'
-                  : 'border-[#2E3440] text-[#9CA3AF] hover:text-[#F3F4F6] hover:border-[#F59E0B]/50'
+                  ? 'border-sky-400/60 text-sky-500'
+                  : 'border-line text-ink-3 hover:text-ink'
               }`}
             >
-              <Cloud size={12} className={isCloudConnected ? 'text-[#38BDF8]' : 'text-[#F59E0B]'} />
-              <span>{isCloudConnected ? 'Cloud ON' : 'Supabase'}</span>
+              <Cloud size={10} />
+              <span>{isCloudConnected ? 'Cloud' : 'DB'}</span>
             </button>
 
             <button
               type="button"
               onClick={handleToggleTheme}
-              title={
-                theme === 'light'
-                  ? 'Ganti ke Dark Mode (Gelap)'
-                  : 'Ganti ke Light Mode (Terang)'
-              }
-              className="px-2.5 py-1.5 rounded-full bg-[#181B22]/90 backdrop-blur-md border border-[#2E3440] text-[#F3F4F6] hover:border-[#F59E0B]/60 flex items-center gap-1.5 text-[11px] font-bold shadow-lg cursor-pointer transition-all"
+              title="Toggle Light / Dark theme"
+              className="px-2 py-0.5 rounded-full bg-card/90 backdrop-blur border border-line text-ink-2 hover:text-ink flex items-center gap-1 text-[10px] font-semibold shadow-sm cursor-pointer transition-all"
             >
               {theme === 'light' ? (
                 <>
-                  <Sun size={12} className="text-[#F59E0B]" />
+                  <Sun size={10} className="text-brand" />
                   <span>Light</span>
                 </>
               ) : (
                 <>
-                  <Moon size={12} className="text-[#F59E0B]" />
+                  <Moon size={10} className="text-brand" />
                   <span>Dark</span>
                 </>
               )}
@@ -697,10 +838,10 @@ export default function App() {
             <button
               type="button"
               onClick={() => setShowDemoDrawer(true)}
-              title="Panel Simulasi Demo Dosen/Penguji"
-              className="px-2.5 py-1.5 rounded-full bg-[#181B22]/90 backdrop-blur-md border border-[#2E3440] text-[#9CA3AF] hover:text-[#F3F4F6] hover:border-[#F59E0B]/50 flex items-center gap-1.5 text-[11px] font-bold shadow-lg cursor-pointer transition-all"
+              title="QA / Demo Panel"
+              className="px-2 py-0.5 rounded-full bg-card/90 backdrop-blur border border-line text-ink-3 hover:text-ink flex items-center gap-1 text-[10px] font-semibold shadow-sm cursor-pointer transition-all"
             >
-              <SlidersHorizontal size={12} className="text-[#F59E0B]" />
+              <SlidersHorizontal size={10} className="text-brand" />
               <span>Demo</span>
             </button>
           </div>
@@ -727,7 +868,7 @@ export default function App() {
                   showToast('Data profil & foto berhasil dimuat dari Supabase Cloud!');
                 } else {
                   handleUpdateUser({ email });
-                  showToast('Berhasil masuk ke akun BeeMate!');
+                  showToast('Welcome back to BeeMate!');
                 }
                 setCurrentScreen('home');
               }}
@@ -747,7 +888,7 @@ export default function App() {
                   verificationStatus: 'Menunggu',
                   studentIdPhoto: null,
                   extraPhotos: [null, null, null],
-                  bio: `Halo! Aku ${freshName}, mahasiswa Binus University yang siap berkolaborasi di BeeMate.`
+                  bio: `Hi! I'm ${freshName}, a Binus University student looking to connect and collaborate on BeeMate.`
                 });
                 setCurrentScreen('verify-otp');
               }}
@@ -755,19 +896,17 @@ export default function App() {
             />
           )}
 
-          {/* Step 1 of 3: Verify Campus Email OTP */}
           {currentScreen === 'verify-otp' && (
             <VerifyOtpScreen
               user={user}
               onVerifiedOtp={() => {
-                showToast('Email kampus terverifikasi! Lanjut isi NIM.');
+                showToast('Campus email verified! Next: NIM.');
                 setCurrentScreen('verify-nim');
               }}
               onBack={() => setCurrentScreen('login')}
             />
           )}
 
-          {/* Step 2 of 3: Verify 10-Digit NIM & Faculty/Major */}
           {currentScreen === 'verify-nim' && (
             <VerifyNimScreen
               user={user}
@@ -777,47 +916,59 @@ export default function App() {
             />
           )}
 
-          {/* Step 3 of 3: Upload Student ID & Select Collaboration Interests */}
           {currentScreen === 'verify-id' && (
             <VerifyIdScreen
               user={user}
               onUpdateUser={handleUpdateUser}
               onCompleteRegistration={() => {
-                showToast(
-                  isCloudConnected
-                    ? 'Pendaftaran & foto Binusian Card tersimpan di Supabase Cloud!'
-                    : 'Pendaftaran selesai! Kartu Binusian sedang ditinjau Admin (1x24 jam).'
-                );
+                showToast('Welcome to BeeMate! Your profile and interests are saved.');
                 setCurrentScreen('home');
               }}
               onBack={() => setCurrentScreen('verify-nim')}
             />
           )}
 
+          {currentScreen === 'interests' && (
+            <InterestsScreen
+              user={user}
+              onUpdateUser={handleUpdateUser}
+              onBack={() => setCurrentScreen('profile')}
+              onContinue={() => {
+                showToast('Interests updated!');
+                setCurrentScreen('profile');
+              }}
+            />
+          )}
+
           {currentScreen === 'home' && (
             <HomeScreen
               user={user}
-              theme={theme}
               profiles={visibleProfiles}
-              swipedIds={swipedIds}
               conversations={conversations}
+              registeredEventIds={registeredEventIds}
+              savedEventIds={savedEventIds}
+              joinedRoomIds={joinedRoomIds}
+              joinedLiveIds={joinedLiveIds}
+              groupUnread={groupUnread}
+              onToggleRegister={handleToggleRegisterEvent}
+              onToggleSave={handleToggleSaveEvent}
+              onToggleRoom={handleToggleRoom}
+              onToggleLive={handleToggleLive}
               onNavigate={setCurrentScreen}
               onOpenChat={handleOpenChat}
-              onInspectProfileInDeck={handleInspectProfileInDeck}
-              onTriggerIncomingCall={handleTriggerIncomingCall}
             />
           )}
 
           {currentScreen === 'matching' && (
             <MatchingScreen
               user={user}
-              theme={theme}
               profiles={visibleProfiles}
               swipedIds={swipedIds}
               focusedProfileId={focusedProfileId}
               dailyLikesLeft={dailyLikesLeft}
               onSwipeLeft={handleSwipeLeft}
               onSwipeRight={handleSwipeRight}
+              onLikeProfile={handleLikeProfile}
               onResetSwipes={() => {
                 setSwipedIds([]);
                 setDailyLikesLeft(15);
@@ -832,10 +983,26 @@ export default function App() {
 
           {currentScreen === 'messages' && (
             <MessagesScreen
+              theme={theme}
               conversations={conversations}
               profiles={visibleProfiles}
               onOpenChat={handleOpenChat}
-              onNavigateMatching={() => setCurrentScreen('matching')}
+              onNavigate={setCurrentScreen}
+              quickActions={quickActions}
+            />
+          )}
+
+          {currentScreen === 'groups' && (
+            <GroupsScreen
+              theme={theme}
+              user={user}
+              groups={groups}
+              onJoinGroup={handleJoinGroup}
+              onLeaveGroup={handleLeaveGroup}
+              onSendGroupMessage={handleSendGroupMessage}
+              onCreateGroup={handleCreateGroup}
+              onNavigate={setCurrentScreen}
+              quickActions={quickActions}
             />
           )}
 
@@ -847,7 +1014,7 @@ export default function App() {
               onSendMessage={handleSendMessage}
               onStartVideoCall={() => {
                 if ((activeConversation?.streakDays || 0) < 3) {
-                  showToast('🔒 Video Call hanya terbuka setelah Streak 3 hari.');
+                  showToast('🔒 Video Call unlocks after a 3-day chat streak.');
                   return;
                 }
                 setCurrentScreen('video-call');
@@ -866,8 +1033,9 @@ export default function App() {
               onOpenCloudConfig={() => setShowCloudModal(true)}
               onToggleTheme={handleToggleTheme}
               onUpdateUser={handleUpdateUser}
+              onOpenInterests={() => setCurrentScreen('interests')}
               onLogout={() => {
-                showToast('Kamu telah keluar dari akun.');
+                showToast('Signed out.');
                 setCurrentScreen('login');
               }}
               onDeleteAccount={() => {
@@ -907,12 +1075,13 @@ export default function App() {
           )}
         </main>
 
-        {/* Floating Pill Bottom Navigation Dock */}
+        {/* Persistent Bottom Navigation */}
         {showBottomNav && (
           <BottomNav
             currentScreen={currentScreen}
             onNavigate={setCurrentScreen}
             unreadTotal={unreadTotal}
+            groupUnread={groupUnread}
           />
         )}
 
@@ -945,12 +1114,12 @@ export default function App() {
           onConfigSaved={(ok) => {
             setIsCloudConnected(Boolean(ok || getSupabaseConfig().isConfigured));
             if (ok) {
-              showToast('Terhubung ke Supabase Cloud! Sinkronisasi HP & Laptop aktif.');
+              showToast('Connected to Supabase Cloud!');
             }
           }}
         />
 
-        {/* Separated QA / Lecturer Demo Drawer */}
+        {/* Separated QA / Demo Drawer */}
         {showDemoDrawer && (
           <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
             <div className="bg-[#181B22] border border-[#2E3440] rounded-3xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
@@ -959,10 +1128,10 @@ export default function App() {
                   <SlidersHorizontal size={16} className="text-[#F59E0B]" />
                   <div>
                     <h3 className="font-display font-extrabold text-sm text-[#F3F4F6]">
-                      Panel Simulasi Demo (QA)
+                      QA / Demo Panel
                     </h3>
                     <p className="text-[11px] text-[#9CA3AF]">
-                      Khusus pengujian skenario presentasi
+                      Quick navigation & simulation controls
                     </p>
                   </div>
                 </div>
@@ -975,7 +1144,40 @@ export default function App() {
                 </button>
               </div>
 
-              {/* 0. Theme Mode Switcher */}
+              {/* Quick Screen Jump */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[#F3F4F6] block">
+                  Jump to Screen:
+                </label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[
+                    { id: 'home', label: 'Home' },
+                    { id: 'matching', label: 'Discover' },
+                    { id: 'messages', label: 'Chats' },
+                    { id: 'groups', label: 'Groups' },
+                    { id: 'interests', label: 'Interests' },
+                    { id: 'profile', label: 'Profile' }
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        setShowDemoDrawer(false);
+                        setCurrentScreen(s.id);
+                      }}
+                      className={`py-2 rounded-xl text-xs font-bold border cursor-pointer transition-all ${
+                        currentScreen === s.id
+                          ? 'bg-[#F59E0B] text-[#0F1115] border-[#F59E0B]'
+                          : 'bg-[#222631] text-[#9CA3AF] border-[#2E3440] hover:text-white'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Theme Mode Switcher */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-[#F3F4F6] flex items-center gap-1.5">
                   {theme === 'light' ? (
@@ -983,7 +1185,7 @@ export default function App() {
                   ) : (
                     <Moon size={14} className="text-[#F59E0B]" />
                   )}
-                  Mode Tampilan (Light / Dark):
+                  Theme (Light / Dark):
                 </label>
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
@@ -1013,11 +1215,11 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 1. Admin Student ID Verification Status */}
+              {/* Admin Student ID Verification Status */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-[#F3F4F6] flex items-center gap-1.5">
                   <ShieldCheck size={14} className="text-[#38BDF8]" />
-                  Simulasi Keputusan Admin (Student ID):
+                  Student ID Status:
                 </label>
                 <div className="grid grid-cols-3 gap-1.5">
                   {['Menunggu', 'Disetujui', 'Ditolak'].map((st) => (
@@ -1026,7 +1228,7 @@ export default function App() {
                       type="button"
                       onClick={() => {
                         handleUpdateUser({ verificationStatus: st });
-                        showToast(`Status verifikasi diubah ke: ${st}`);
+                        showToast(`Status changed to: ${st}`);
                       }}
                       className={`py-2 rounded-xl text-xs font-bold border cursor-pointer transition-all ${
                         user.verificationStatus === st
@@ -1040,12 +1242,12 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 2. Fast-Forward Active Chat Streak */}
+              {/* Fast-Forward Active Chat Streak */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-[#F3F4F6] flex items-center gap-1.5">
                   <Flame size={14} className="text-[#F59E0B]" />
-                  Simulasi Streak Chat Aktif ({activePartner?.name?.split(' ')[0]} —{' '}
-                  {activeConversation?.streakDays || 0} Hari):
+                  Active Chat Streak ({activePartner?.name?.split(' ')[0]} —{' '}
+                  {activeConversation?.streakDays || 0} days):
                 </label>
                 <button
                   type="button"
@@ -1056,15 +1258,15 @@ export default function App() {
                   }}
                   className="w-full py-2.5 rounded-xl bg-[#222631] hover:bg-[#2E3440] border border-[#F59E0B]/40 text-[#F59E0B] text-xs font-bold cursor-pointer transition-all"
                 >
-                  +1 Hari Streak (Fast-Forward 24 Jam)
+                  +1 Day Streak (Fast-Forward 24h)
                 </button>
               </div>
 
-              {/* 3. Trigger Incoming Call */}
+              {/* Trigger Incoming Call */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-[#F3F4F6] flex items-center gap-1.5">
                   <PhoneIncoming size={14} className="text-[#10B981]" />
-                  Simulasi Panggilan Video Masuk (Syarat Streak ≥ 3):
+                  Simulate Incoming Video Call (Streak ≥ 3):
                 </label>
                 <button
                   type="button"
@@ -1074,21 +1276,21 @@ export default function App() {
                   }}
                   className="w-full py-2.5 rounded-xl bg-[#222631] hover:bg-[#2E3440] border border-[#2E3440] text-[#F3F4F6] text-xs font-bold cursor-pointer transition-all"
                 >
-                  Picu Panggilan Masuk Sekarang
+                  Trigger Incoming Call
                 </button>
               </div>
 
-              {/* 4. Reset All Persistent Storage */}
+              {/* Reset All Persistent Storage */}
               <div className="pt-2 border-t border-[#2E3440] flex items-center justify-between">
                 <span className="text-[11px] text-[#9CA3AF]">
-                  Laporan tersimpan: {reports.length}
+                  Reports saved: {reports.length}
                 </span>
                 <button
                   type="button"
                   onClick={handleResetDemoData}
                   className="px-3 py-2 rounded-xl bg-[#EF4444]/15 border border-[#EF4444]/30 text-[#EF4444] text-xs font-bold flex items-center gap-1.5 cursor-pointer hover:bg-[#EF4444]/25"
                 >
-                  <RotateCcw size={12} /> Reset Data Demo
+                  <RotateCcw size={12} /> Reset Demo Data
                 </button>
               </div>
             </div>

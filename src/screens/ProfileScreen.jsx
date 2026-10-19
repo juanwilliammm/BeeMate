@@ -30,6 +30,7 @@ export default function ProfileScreen({
   onOpenCloudConfig,
   onToggleTheme,
   onUpdateUser,
+  onOpenInterests,
   onLogout,
   onDeleteAccount
 }) {
@@ -413,15 +414,29 @@ export default function ProfileScreen({
 
           <p className="text-xs text-[#94A3B8] leading-relaxed">{user.bio}</p>
 
-          <div className="flex flex-wrap gap-1.5">
-            {user.interests.map((tag) => (
-              <span
-                key={tag}
-                className="px-3 py-1 rounded-full bg-[#222631] border border-[#2E3440] text-white text-xs font-semibold"
-              >
-                {tag}
-              </span>
-            ))}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-[#94A3B8]">Interests</span>
+              {onOpenInterests && (
+                <button
+                  type="button"
+                  onClick={onOpenInterests}
+                  className="text-[11px] font-bold text-[#F59E0B] hover:underline cursor-pointer"
+                >
+                  Edit Interests →
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {user.interests.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-3 py-1 rounded-full bg-[#222631] border border-[#2E3440] text-white text-xs font-semibold"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
       )}
