@@ -105,16 +105,25 @@ export function getInterestIcon(label) {
 
 // Single source of truth for Match Compatibility Score across Home & Matching screens
 export function calculateMatchScore(user, candidate) {
-  if (!user || !candidate) return 75;
+  if (!user || !candidate) return 0;
+
   const userInterests = normalizeInterests(user.interests);
   const candidateInterests = normalizeInterests(candidate.interests);
-  const sharedCount = candidateInterests.filter((i) =>
-    userInterests.includes(i)
-  ).length;
-  const sameGoalBonus = candidate.goal === user.goal ? 25 : 8;
-  const sameFacultyBonus = candidate.faculty === user.faculty ? 10 : 5;
-  const baseScore = 32;
-  return Math.min(98, baseScore + sharedCount * 14 + sameGoalBonus + sameFacultyBonus);
+
+  // 1. Jaccard Similarity for interests (Weight: 0.5)
+  const intersection = candidateInterests.filter((i) => userInterests.includes(i));
+  const union = new Set([...userInterests, ...candidateInterests]);
+  const interestSimilarity = union.size > 0 ? intersection.length / union.size : 0;
+
+  // 2. Program Study / Major Similarity (Weight: 0.3)
+  const majorSimilarity = user.major && candidate.major && user.major === candidate.major ? 1 : 0;
+
+  // 3. Connection Goal Similarity (Weight: 0.2)
+  const goalSimilarity = user.goal && candidate.goal && user.goal === candidate.goal ? 1 : 0;
+
+  // Total weighted score in percentage (0 - 100%)
+  const totalScore = (interestSimilarity * 0.5) + (majorSimilarity * 0.3) + (goalSimilarity * 0.2);
+  return Math.round(totalScore * 100);
 }
 
 // Contextual auto-reply generator based on partner profile

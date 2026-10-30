@@ -9,7 +9,7 @@ export function BeeMateWordmark({ theme }) {
   return (
     <div className="flex items-center gap-2">
       <img src={logoSrc} alt="" className="w-7 h-7 object-contain" />
-      <span className="text-[20px] font-semibold tracking-tight text-ink">beemate</span>
+      <span className="text-[20px] font-semibold tracking-tight text-ink">BeeMate</span>
     </div>
   );
 }

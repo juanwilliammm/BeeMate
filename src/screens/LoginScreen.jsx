@@ -211,7 +211,7 @@ export default function LoginScreen({
       {/* Top Amber Header Area (Matches Right Phone in Reference Image 3) */}
       <div className="px-7 pt-5 pb-10 text-[#0F1115] shrink-0 keep-dark-overlay">
         {/* Top Navigation Row: Back Arrow on Left, Switch Mode on Right */}
-        <div className="flex items-center justify-between mb-5 pr-24">
+        <div className="flex items-center mb-5">
           <button
             type="button"
             onClick={() => {
@@ -222,23 +222,6 @@ export default function LoginScreen({
             aria-label="Kembali"
           >
             <ArrowLeft size={18} />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setErrorMsg('');
-              if (!isRegisterMode) {
-                setEmail('');
-                setPassword('');
-                setStepView('signup');
-              } else {
-                setStepView('signin');
-              }
-            }}
-            className="text-xs font-extrabold text-[#0F1115] hover:underline cursor-pointer"
-          >
-            {isRegisterMode ? 'Masuk' : 'Daftar Baru'}
           </button>
         </div>
 
@@ -347,6 +330,29 @@ export default function LoginScreen({
               </>
             )}
           </button>
+
+          {/* Mode Switch: Masuk / Daftar Baru (font kecil di bawah kotak hitam) */}
+          <div className="text-center pt-2.5">
+            <span className="text-[11px] text-[#94A3B8]">
+              {isRegisterMode ? 'Sudah punya akun? ' : 'Belum punya akun? '}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setErrorMsg('');
+                if (!isRegisterMode) {
+                  setEmail('');
+                  setPassword('');
+                  setStepView('signup');
+                } else {
+                  setStepView('signin');
+                }
+              }}
+              className="text-[11px] font-bold text-[#F59E0B] hover:underline cursor-pointer ml-1"
+            >
+              {isRegisterMode ? 'Masuk' : 'Daftar Baru'}
+            </button>
+          </div>
         </form>
 
         {/* Bottom Quick Action Pill Rows (Matches Bottom Pill Cards in Reference Image 3) */}

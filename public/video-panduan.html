@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Animasi Panduan Penggunaan BeeMate</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #090B0E;
+      color: #F8FAFC;
+      overflow-x: hidden;
+      user-select: none;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0F1115;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #F59E0B;
+      border-radius: 999px;
+    }
+    /* Glow Effects */
+    .glow-amber {
+      box-shadow: 0 0 35px -5px rgba(245, 158, 11, 0.4);
+    }
+    .glow-blue {
+      box-shadow: 0 0 35px -5px rgba(56, 189, 248, 0.4);
+    }
+    /* Phone Mockup Frame */
+    .phone-bezel {
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1), inset 0 0 0 2px rgba(245, 158, 11, 0.2);
+    }
+    /* Animation Keyframes */
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(1deg); }
+    }
+    @keyframes pulseRing {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 0.3; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    @keyframes laserScan {
+      0% { top: 10%; opacity: 0.2; }
+      50% { top: 90%; opacity: 0.9; }
+      100% { top: 10%; opacity: 0.2; }
+    }
+    .laser-line {
+      animation: laserScan 2.2s infinite ease-in-out;
+    }
+    .animate-float {
+      animation: floatSlow 4s infinite ease-in-out;
+    }
+    /* Progress Bar */
+    .timeline-scrubber::-webkit-slider-thumb {
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #F59E0B;
+      cursor: pointer;
+      box-shadow: 0 0 10px #F59E0B;
+      transition: transform 0.1s ease;
+    }
+    .timeline-scrubber::-webkit-slider-thumb:hover {
+      transform: scale(1.3);
+    }
+  </style>
+</head>
+<body class="bg-[#090B0E] text-slate-100 min-h-screen flex flex-col justify-between">
+
+  <!-- TOP HEADER & CONTROLS -->
+  <header class="border-b border-slate-800/80 bg-[#0F1115]/95 backdrop-blur-md px-4 sm:px-6 py-3 sticky top-0 z-50 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-amber-500/20">
+        🐝
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-bold text-sm sm:text-base tracking-tight text-white flex items-center gap-1.5">
+            BeeMate <span class="text-xs bg-amber-500/15 text-amber-400 font-semibold px-2 py-0.5 rounded-full border border-amber-500/30">Video Animasi Panduan</span>
+          </h1>
+          <span class="hidden md:inline-block text-[11px] text-slate-400">• Binus University Student App</span>
+        </div>
+        <p class="text-[11px] text-slate-400">Motion Graphics Interaktif & Panduan Step-by-Step</p>
+      </div>
+    </div>
+
+    <!-- Right Action Buttons -->
+    <div class="flex items-center gap-2">
+      <button id="btnVoiceToggle" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition">
+        <span id="voiceIcon">🔊</span>
+        <span class="hidden sm:inline" id="voiceLabel">Narasi Suara: ON</span>
+      </button>
+
+      <button id="btnSfxToggle" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 transition">
+        <span id="sfxIcon">🔔</span>
+        <span class="hidden sm:inline" id="sfxLabel">SFX: ON</span>
+      </button>
+
+      <button id="btnRecordVideo" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition active:scale-95">
+        <span class="w-2 h-2 rounded-full bg-red-600 animate-ping" id="recDot" style="display:none;"></span>
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        <span id="btnRecordText">Unduh Video WebM</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN VIDEO STAGE AREA -->
+  <main class="flex-1 flex flex-col items-center justify-center p-3 sm:p-6 max-w-7xl mx-auto w-full">
+    
+    <!-- Video Player Screen Container (16:9 Aspect Ratio Container) -->
+    <div id="videoContainer" class="relative w-full aspect-[16/9] max-h-[720px] bg-[#0A0D12] rounded-2xl border border-slate-800 overflow-hidden shadow-2xl flex flex-col justify-between">
+      
+      <!-- BACKGROUND AMBIENT PARTICLES & GRID -->
+      <div class="absolute inset-0 pointer-events-none opacity-25">
+        <div class="absolute -top-32 -left-32 w-96 h-96 bg-amber-500/20 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-32 -right-32 w-96 h-96 bg-sky-500/20 rounded-full blur-3xl"></div>
+        <div class="w-full h-full" style="background-image: radial-gradient(#1e293b 1px, transparent 1px); background-size: 24px 24px;"></div>
+      </div>
+
+      <!-- VIDEO WATERMARK / BRANDING BADGE -->
+      <div class="absolute top-4 left-4 z-20 flex items-center gap-2 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-700/60 shadow-lg">
+        <span class="text-amber-400 font-bold text-xs flex items-center gap-1">
+          <span>🐝</span> BeeMate
+        </span>
+        <span class="text-slate-600">|</span>
+        <span id="sceneBadgeText" class="text-slate-300 text-xs font-medium">1. Intro Aplikasi</span>
+      </div>
+
+      <div class="absolute top-4 right-4 z-20 flex items-center gap-2">
+        <span class="px-2.5 py-1 rounded-full text-[10px] font-mono tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          60 FPS HD • 1080p
+        </span>
+      </div>
+
+      <!-- ANIMATED SCENE STAGE (Dynamic DOM Content) -->
+      <div id="sceneStage" class="relative z-10 w-full h-full flex items-center justify-center px-4 sm:px-12 py-6">
+        <!-- Injected via JavaScript based on active scene -->
+      </div>
+
+      <!-- BOTTOM SUBTITLES / CAPTION OVERLAY -->
+      <div class="relative z-20 px-6 py-3 bg-gradient-to-t from-[#080A0D] via-[#080A0D]/90 to-transparent flex flex-col items-center text-center">
+        <div id="subtitleBox" class="inline-block px-5 py-2 rounded-xl bg-slate-900/90 border border-slate-700/80 backdrop-blur-md shadow-xl max-w-3xl transition-all duration-300">
+          <p id="subtitleText" class="text-xs sm:text-sm md:text-base font-semibold text-amber-300 tracking-wide drop-shadow">
+            Selamat datang di BeeMate — Aplikasi Jejaring & Kolaborasi Khusus Mahasiswa Binus University!
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- VIDEO CONTROLLER BAR -->
+    <div class="w-full max-w-7xl mt-4 bg-[#0F1115] border border-slate-800 rounded-xl p-3 sm:p-4 shadow-xl flex flex-col gap-3">
+      
+      <!-- Progress Scrubber & Timestamp -->
+      <div class="flex items-center gap-3">
+        <span id="currentTime" class="font-mono text-xs text-amber-400 font-semibold min-w-[42px]">00:00</span>
+        <div class="relative flex-1 flex items-center">
+          <input type="range" id="progressBar" min="0" max="1000" value="0" step="1" 
+                 class="timeline-scrubber w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer focus:outline-none accent-amber-500">
+        </div>
+        <span id="totalDuration" class="font-mono text-xs text-slate-400 min-w-[42px]">02:15</span>
+      </div>
+
+      <!-- Controls Row: Play/Pause, Scene Selectors, Speed -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+        
+        <!-- Left: Playback Controls -->
+        <div class="flex items-center gap-2">
+          <!-- Prev Scene -->
+          <button id="btnPrev" title="Scene Sebelumnya" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+          </button>
+
+          <!-- Play / Pause -->
+          <button id="btnPlayPause" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold flex items-center gap-2 shadow-lg shadow-amber-500/25 transition active:scale-95">
+            <span id="playIcon">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </span>
+            <span id="playLabel" class="text-xs">Putar Animasi</span>
+          </button>
+
+          <!-- Next Scene -->
+          <button id="btnNext" title="Scene Berikutnya" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+          </button>
+
+          <!-- Restart -->
+          <button id="btnRestart" title="Mulai Ulang" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Middle: Scene Chapters Quick Pills -->
+        <div class="hidden lg:flex items-center gap-1.5 overflow-x-auto py-1 max-w-xl">
+          <button class="scene-tab px-2.5 py-1 text-[11px] rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 font-medium whitespace-nowrap" data-scene="0">1. Intro</button>
+          <button class="scene-tab px-2.5 py-1 text-[11px] rounded-lg bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/60 font-medium whitespace-nowrap" data-scene="1">2. Login</button>
+          <button class="scene-tab px-2.5 py-1 text-[11px] rounded-lg bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/60 font-medium whitespace-nowrap" data-scene="2">3. Verifikasi NIM</button>
+          <button class="scene-tab px-2.5 py-1 text-[11px] rounded-lg bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/60 font-medium whitespace-nowrap" data-scene="3">4. ID Card Flazz</button>
+          <button class="scene-tab px-2.5 py-1 text-[11px] rounded-lg bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/60 font-medium whitespace-nowrap" data-scene="4">5. OTP</button>
+          <button class="scene-tab px-2.5 py-1 text-[11px] rounded-lg bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/60 font-medium whitespace-nowrap" data-scene="5">6. Matching</button>
+          <button class="scene-tab px-2.5 py-1 text-[11px] rounded-lg bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/60 font-medium whitespace-nowrap" data-scene="6">7. Icebreaker</button>
+          <button class="scene-tab px-2.5 py-1 text-[11px] rounded-lg bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/60 font-medium whitespace-nowrap" data-scene="7">8. Streak 🔥</button>
+          <button class="scene-tab px-2.5 py-1 text-[11px] rounded-lg bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/60 font-medium whitespace-nowrap" data-scene="8">9. Video Call</button>
+        </div>
+
+        <!-- Right: Speed Selector & Fullscreen -->
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] text-slate-400">Kecepatan:</span>
+          <select id="speedSelector" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1 focus:outline-none focus:border-amber-500">
+            <option value="0.75">0.75x</option>
+            <option value="1.0" selected>1.0x (Normal)</option>
+            <option value="1.25">1.25x</option>
+            <option value="1.5">1.5x</option>
+          </select>
+          <button id="btnFullscreen" title="Layar Penuh" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+            </svg>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CHAPTER DETAILS & SUMMARY ACCORDION -->
+    <div class="w-full max-w-7xl mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-[#0F1115] border border-slate-800 rounded-xl p-4 flex flex-col gap-2">
+        <div class="flex items-center gap-2 text-amber-400 font-semibold text-xs tracking-wide">
+          <span>🔒</span> VERIFIKASI KAMPUS KETAT
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          BeeMate mengharuskan mahasiswa verifikasi 3 tahap: email @binus.ac.id, validasi 10 digit NIM, dan foto Kartu Mahasiswa Flazz asli sesuai UU PDP untuk menjamin 100% civitas akademika Binus.
+        </p>
+      </div>
+
+      <div class="bg-[#0F1115] border border-slate-800 rounded-xl p-4 flex flex-col gap-2">
+        <div class="flex items-center gap-2 text-sky-400 font-semibold text-xs tracking-wide">
+          <span>🎯</span> SMART MATCHING BERBOBOT
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Skor kecocokan dihitung transparan: 50% kesamaan minat (Jaccard similarity), 30% jurusan/fakultas, dan 20% tujuan networking (study buddy, partner lomba GEMASTIK, atau tim hackathon).
+        </p>
+      </div>
+
+      <div class="bg-[#0F1115] border border-slate-800 rounded-xl p-4 flex flex-col gap-2">
+        <div class="flex items-center gap-2 text-emerald-400 font-semibold text-xs tracking-wide">
+          <span>🔥</span> STREAK CHAT & VIDEO CALL
+        </div>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Mencegah spam & pelecehan: Tombol Video Call terkunci otomatis sebelum kedua mahasiswa aktif mengobrol (streak minimal 3 hari berturut-turut). Dilengkapi fitur balas cepat "Lagi kuliah".
+        </p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- HIDDEN CANVAS FOR VIDEO RECORDING -->
+  <canvas id="recorderCanvas" width="1280" height="720" style="display:none;"></canvas>
+
+  <!-- JAVASCRIPT ANIMATION ENGINE & VIDEO PLAYER -->
+  <script>
+    // --- 1. SOUND FX SYNTHESIZER (Web Audio API) ---
+    class SoundFX {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+      }
+      playTone(freq, type, duration, gainValue = 0.1) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(gainValue, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + duration);
+        } catch(e) {}
+      }
+      whoosh() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.25);
+          gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.25);
+        } catch(e) {}
+      }
+      tap() { this.playTone(600, 'sine', 0.08, 0.05); }
+      matchFanfare() {
+        this.playTone(523.25, 'triangle', 0.15, 0.1); // C5
+        setTimeout(() => this.playTone(659.25, 'triangle', 0.18, 0.1), 100); // E5
+        setTimeout(() => this.playTone(783.99, 'triangle', 0.25, 0.12), 200); // G5
+        setTimeout(() => this.playTone(1046.50, 'triangle', 0.4, 0.15), 320); // C6
+      }
+      streakFlame() {
+        this.playTone(300, 'sawtooth', 0.1, 0.06);
+        setTimeout(() => this.playTone(550, 'sine', 0.2, 0.1), 80);
+      }
+      ring() {
+        this.playTone(853, 'sine', 0.15, 0.08);
+        setTimeout(() => this.playTone(960, 'sine', 0.15, 0.08), 120);
+      }
+    }
+    const sfx = new SoundFX();
+
+    // --- 2. INDONESIAN SPEECH SYNTHESIS NARRATION ---
+    class VoiceNarrator {
+      constructor() {
+        this.enabled = true;
+        this.synth = window.speechSynthesis || null;
+        this.voice = null;
+        this.initVoice();
+      }
+      initVoice() {
+        if (!this.synth) return;
+        const findVoice = () => {
+          const voices = this.synth.getVoices();
+          // Prefer Indonesian voice
+          this.voice = voices.find(v => v.lang.includes('id') || v.lang.includes('ID')) ||
+                       voices.find(v => v.lang.includes('ms') || v.lang.includes('en')) || null;
+        };
+        findVoice();
+        if (this.synth.onvoiceschanged !== undefined) {
+          this.synth.onvoiceschanged = findVoice;
+        }
+      }
+      speak(text, rate = 1.0) {
+        if (!this.enabled || !this.synth) return;
+        this.stop();
+        const utter = new SpeechSynthesisUtterance(text);
+        if (this.voice) utter.voice = this.voice;
+        utter.rate = rate;
+        utter.pitch = 1.05;
+        this.synth.speak(utter);
+      }
+      stop() {
+        if (this.synth) {
+          this.synth.cancel();
+        }
+      }
+    }
+    const narrator = new VoiceNarrator();
+
+    // --- 3. SCENE DATA DEFINITIONS ---
+    const SCENES = [
+      {
+        id: 0,
+        title: "1. Intro & Mengenal BeeMate",
+        badge: "Intro • Platform Networking Binusian",
+        duration: 9, // seconds
+        subtitles: "Selamat datang di BeeMate! Platform jejaring & kolaborasi eksklusif khusus mahasiswa Binus University.",
+        speech: "Selamat datang di Bee Mate! Platform jejaring dan kolaborasi eksklusif khusus mahasiswa Binus University.",
+        render: () => `
+          <div class="flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-4xl text-center md:text-left animate-fade-in">
+            <div class="relative">
+              <div class="w-36 h-36 sm:w-44 sm:h-44 rounded-3xl bg-gradient-to-tr from-amber-500 via-amber-400 to-amber-300 flex items-center justify-center text-7xl sm:text-8xl shadow-2xl shadow-amber-500/30 animate-float border-2 border-amber-300">
+                🐝
+              </div>
+              <div class="absolute -bottom-2 -right-2 bg-slate-900 border border-amber-400/50 px-3 py-1 rounded-full text-xs font-bold text-amber-400 shadow">
+                v0.1 Prototype
+              </div>
+            </div>
+            <div class="flex flex-col gap-3">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-semibold w-fit mx-auto md:mx-0">
+                <span>🎓</span> Khusus Binus Kemanggisan, Alsut, Senayan & Bekasi
+              </div>
+              <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
+                Temukan <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-200">Study Buddy</span> & <span class="text-sky-400">Partner Lomba</span> Kampus
+              </h2>
+              <p class="text-sm text-slate-300 max-w-lg leading-relaxed">
+                BeeMate hadir menghubungkan ribuan Binusian dari berbagai jurusan dan keahlian untuk belajar bareng, tim hackathon, dan proyek masa depan!
+              </p>
+              <div class="flex items-center gap-3 justify-center md:justify-start pt-2">
+                <span class="flex items-center gap-1.5 text-xs text-emerald-400 font-medium bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                  <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path></svg>
+                  100% Mahasiswa Asli
+                </span>
+                <span class="flex items-center gap-1.5 text-xs text-sky-400 font-medium bg-sky-500/10 px-2.5 py-1 rounded-lg border border-sky-500/20">
+                  <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
+                  Aman & Terenkripsi
+                </span>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        id: 1,
+        title: "2. Login Email Binus",
+        badge: "Autentikasi • Email Kampus Wajib",
+        duration: 9,
+        subtitles: "Langkah 1: Masuk menggunakan akun email resmi @binus.ac.id. Akun umum non-Binus ditolak secara otomatis.",
+        speech: "Langkah pertama: Masuk menggunakan akun email resmi at binus dot ac dot id. Akun umum non-Binus ditolak secara otomatis demi keamanan komunitas.",
+        render: () => `
+          <div class="flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-4xl">
+            <!-- Mock Phone Preview -->
+            <div class="w-64 sm:w-72 bg-[#12161F] rounded-[38px] p-3 border-4 border-slate-700 phone-bezel relative shadow-2xl">
+              <!-- Notch / Island -->
+              <div class="w-24 h-4 bg-black rounded-full mx-auto mb-3"></div>
+              <div class="bg-[#181B22] rounded-[28px] p-4 flex flex-col gap-3 border border-slate-800">
+                <div class="text-center py-2">
+                  <div class="w-10 h-10 bg-amber-500 rounded-xl mx-auto flex items-center justify-center text-xl font-bold text-slate-950 mb-1">🐝</div>
+                  <h3 class="text-sm font-bold text-white">Masuk ke BeeMate</h3>
+                  <p class="text-[10px] text-slate-400">Gunakan akun resmi Binus</p>
+                </div>
+                <div class="space-y-2">
+                  <div>
+                    <label class="text-[10px] text-slate-300 font-semibold block mb-0.5">Email Binus (@binus.ac.id)</label>
+                    <div class="bg-[#0F1115] border border-amber-500/80 rounded-lg px-2.5 py-1.5 text-xs text-amber-300 font-mono flex items-center justify-between">
+                      <span>rafi.pratama@binus.ac.id</span>
+                      <span class="text-emerald-400 text-xs">✓</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="text-[10px] text-slate-300 font-semibold block mb-0.5">Kata Sandi</label>
+                    <div class="bg-[#0F1115] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-400">
+                      ••••••••••••
+                    </div>
+                  </div>
+                  <button class="w-full py-2 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs hover:bg-amber-400 shadow-md transition flex items-center justify-center gap-1">
+                    <span>Masuk</span>
+                    <span class="animate-pulse">→</span>
+                  </button>
+                </div>
+                <div class="text-[9px] text-center text-slate-500 pt-1">
+                  Proteksi 5x salah login akan dikunci otomatis
+                </div>
+              </div>
+            </div>
+
+            <!-- Explainer Cards -->
+            <div class="flex flex-col gap-3 max-w-md">
+              <span class="text-xs font-bold text-amber-400 tracking-wider uppercase">Langkah 1: Verifikasi Identitas</span>
+              <h3 class="text-2xl font-bold text-white">Gerbang Masuk Eksklusif Binusian</h3>
+              <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Aplikasi hanya menerima email dengan domain resmi <code class="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-mono text-xs">@binus.ac.id</code>.
+              </p>
+              <div class="space-y-2 pt-2">
+                <div class="flex items-start gap-2 bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                  <span class="text-emerald-400 mt-0.5">✓</span>
+                  <div class="text-xs text-slate-300">Format wajib: <span class="text-white font-mono">namaawal.namaakhir@binus.ac.id</span></div>
+                </div>
+                <div class="flex items-start gap-2 bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                  <span class="text-emerald-400 mt-0.5">✓</span>
+                  <div class="text-xs text-slate-300">Tersinkronisasi dengan database cloud Supabase</div>
+                </div>
+                <div class="flex items-start gap-2 bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
+                  <span class="text-amber-400 mt-0.5">🛡️</span>
+                  <div class="text-xs text-slate-300">Mencegah penyusup, scammer, dan akun anonim di kampus</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        id: 2,
+        title: "3. Verifikasi NIM 10 Digit",
+        badge: "Verifikasi • Langkah 1 dari 3",
+        duration: 9,
+        subtitles: "Langkah 2: Masukkan 10 digit NIM Binus. Sistem secara pintar menghitung angkatan dan tahun kelulusan Anda.",
+        speech: "Langkah kedua: Masukkan 10 digit NIM Binus. Sistem secara otomatis menghitung angkatan dan tahun estimasi kelulusan Anda.",
+        render: () => `
+          <div class="flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-4xl">
+            <!-- Mock Phone Preview -->
+            <div class="w-64 sm:w-72 bg-[#12161F] rounded-[38px] p-3 border-4 border-slate-700 phone-bezel relative shadow-2xl">
+              <div class="w-24 h-4 bg-black rounded-full mx-auto mb-3"></div>
+              <div class="bg-[#181B22] rounded-[28px] p-4 flex flex-col gap-3 border border-slate-800">
+                <div class="flex items-center justify-between text-[11px] text-amber-400 font-semibold border-b border-slate-800 pb-2">
+                  <span>Langkah 1 dari 3</span>
+                  <span class="bg-amber-500/10 px-2 py-0.5 rounded text-[10px]">Verifikasi NIM</span>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-white mb-1">Nomor Induk Mahasiswa</h4>
+                  <p class="text-[10px] text-slate-400 mb-2">10 digit angka resmi di Binusmaya</p>
+                  <div class="bg-[#0F1115] border-2 border-amber-500 rounded-lg p-2 text-center text-base tracking-widest font-mono text-amber-300 font-bold">
+                    2 8 0 2 4 1 9 2 8 3
+                  </div>
+                </div>
+                <!-- Auto Calculated Result Card -->
+                <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-2.5 flex flex-col gap-1.5 animate-pulse">
+                  <div class="text-[10px] text-amber-300 font-semibold flex items-center gap-1">
+                    <span>⚡</span> Terdeteksi Otomatis:
+                  </div>
+                  <div class="flex justify-between text-xs text-white font-medium">
+                    <span>Angkatan Masuk:</span>
+                    <span class="font-bold text-amber-400">2024 (B28)</span>
+                  </div>
+                  <div class="flex justify-between text-xs text-white font-medium">
+                    <span>Tahun Kelulusan:</span>
+                    <span class="font-bold text-amber-400">2028</span>
+                  </div>
+                </div>
+                <button class="w-full py-2 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs hover:bg-amber-400 shadow transition">
+                  Lanjut ke Foto Kartu Mahasiswa →
+                </button>
+              </div>
+            </div>
+
+            <!-- Explainer -->
+            <div class="flex flex-col gap-3 max-w-md">
+              <span class="text-xs font-bold text-amber-400 tracking-wider uppercase">Validasi Pintar NIM</span>
+              <h3 class="text-2xl font-bold text-white">1 NIM = 1 Akun Mahasiswa</h3>
+              <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Algoritma BeeMate memeriksa keunikan 10 digit NIM. Sistem langsung menghitung angkatan Binusian (<span class="font-mono text-amber-400 font-bold">B28 = 2024</span>) dan memperkirakan tahun kelulusan secara presisi.
+              </p>
+              <div class="bg-slate-900/80 border border-slate-800 p-3 rounded-xl space-y-1.5 text-xs text-slate-300">
+                <div class="font-semibold text-white flex items-center gap-1.5">
+                  <span>💡</span> Fitur Fleksibel:
+                </div>
+                <p>Bila mahasiswa mengikuti program akselerasi atau cuti studi, tahun kelulusan dapat dikoreksi secara manual tanpa ribet.</p>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        id: 3,
+        title: "4. Verifikasi Flazz Card Binus",
+        badge: "Verifikasi • Langkah 2 dari 3",
+        duration: 10,
+        subtitles: "Langkah 3: Unggah foto Kartu Mahasiswa Binus (Flazz ID Card). Data diverifikasi sesuai UU Perlindungan Data Pribadi.",
+        speech: "Langkah ketiga: Unggah foto Kartu Mahasiswa Flazz Binus. Data diverifikasi oleh tim admin dan foto dihapus sesuai UU PDP.",
+        render: () => `
+          <div class="flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-4xl">
+            <!-- Mock Phone Preview with Laser Scanning Animation -->
+            <div class="w-64 sm:w-72 bg-[#12161F] rounded-[38px] p-3 border-4 border-slate-700 phone-bezel relative shadow-2xl">
+              <div class="w-24 h-4 bg-black rounded-full mx-auto mb-3"></div>
+              <div class="bg-[#181B22] rounded-[28px] p-4 flex flex-col gap-3 border border-slate-800">
+                <div class="flex items-center justify-between text-[11px] text-amber-400 font-semibold border-b border-slate-800 pb-2">
+                  <span>Langkah 2 dari 3</span>
+                  <span class="bg-sky-500/10 text-sky-400 px-2 py-0.5 rounded text-[10px]">Student ID Card</span>
+                </div>
+                
+                <!-- Mock Student ID Card with Laser Line -->
+                <div class="relative bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 border-2 border-sky-400/60 rounded-xl p-3 shadow-inner overflow-hidden h-36 flex flex-col justify-between">
+                  <!-- Scanning Laser Line -->
+                  <div class="absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent shadow-[0_0_8px_#F59E0B] laser-line"></div>
+                  
+                  <div class="flex items-center justify-between">
+                    <span class="text-[9px] font-black tracking-widest text-sky-300">BINUS UNIVERSITY</span>
+                    <span class="text-[8px] bg-amber-400 text-slate-950 font-bold px-1 rounded">Flazz</span>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <div class="w-10 h-12 bg-slate-700 rounded border border-white/20 flex items-center justify-center text-lg">
+                      👨‍🎓
+                    </div>
+                    <div>
+                      <div class="text-xs font-bold text-white">RAFI PRATAMA</div>
+                      <div class="text-[9px] text-sky-200 font-mono">NIM: 2802419283</div>
+                      <div class="text-[8px] text-slate-300">Computer Science</div>
+                    </div>
+                  </div>
+
+                  <div class="text-[8px] text-slate-400 flex justify-between">
+                    <span>Valid Thru: 2028</span>
+                    <span class="text-emerald-400 font-bold">KARTU RESMI</span>
+                  </div>
+                </div>
+
+                <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-2 text-center text-[10px] text-emerald-300 font-semibold">
+                  ✓ Foto Terbaca Jelas & Terenkripsi
+                </div>
+
+                <button class="w-full py-2 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs hover:bg-amber-400 shadow transition">
+                  Kirim untuk Ditinjau (1x24 Jam) →
+                </button>
+              </div>
+            </div>
+
+            <!-- Explainer -->
+            <div class="flex flex-col gap-3 max-w-md">
+              <span class="text-xs font-bold text-sky-400 tracking-wider uppercase">Standar Keamanan Tertinggi</span>
+              <h3 class="text-2xl font-bold text-white">Privasi Terjamin & Patuh UU PDP</h3>
+              <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Setiap foto kartu mahasiswa diverifikasi untuk memastikan keaslian status perkuliahan. Sesuai Undang-Undang Perlindungan Data Pribadi (UU PDP):
+              </p>
+              <div class="space-y-2 pt-1">
+                <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 text-xs text-slate-300 flex items-start gap-2">
+                  <span class="text-amber-400 font-bold">🔒</span>
+                  <span>Foto dienkripsi secara end-to-end selama masa peninjauan verifikasi.</span>
+                </div>
+                <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 text-xs text-slate-300 flex items-start gap-2">
+                  <span class="text-emerald-400 font-bold">🗑️</span>
+                  <span>File fisik foto langsung dihapus permanen dari server segera setelah akun disetujui.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        id: 4,
+        title: "5. Kode OTP 6 Digit",
+        badge: "Verifikasi • Langkah 3 dari 3",
+        duration: 9,
+        subtitles: "Langkah 4: Masukkan 6 digit kode OTP yang dikirimkan ke email Binus Anda dalam waktu 5 menit.",
+        speech: "Langkah keempat: Masukkan enam digit kode OTP yang dikirim ke email kampus Anda untuk mengaktifkan akun secara instan.",
+        render: () => `
+          <div class="flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-4xl">
+            <!-- Mock Phone Preview -->
+            <div class="w-64 sm:w-72 bg-[#12161F] rounded-[38px] p-3 border-4 border-slate-700 phone-bezel relative shadow-2xl">
+              <div class="w-24 h-4 bg-black rounded-full mx-auto mb-3"></div>
+              <div class="bg-[#181B22] rounded-[28px] p-4 flex flex-col gap-3 border border-slate-800">
+                <div class="flex items-center justify-between text-[11px] text-amber-400 font-semibold border-b border-slate-800 pb-2">
+                  <span>Langkah 3 dari 3</span>
+                  <span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded text-[10px]">OTP Selesai</span>
+                </div>
+
+                <div class="text-center py-2">
+                  <div class="text-2xl mb-1">📩</div>
+                  <h4 class="text-xs font-bold text-white">Periksa Inbox Email Binus</h4>
+                  <p class="text-[10px] text-slate-400">Kode OTP 6-digit dikirim ke rafi.pratama@binus.ac.id</p>
+                </div>
+
+                <!-- 6 Digit Input Boxes -->
+                <div class="grid grid-cols-6 gap-1.5 my-1">
+                  <div class="h-10 bg-[#0F1115] border border-amber-400 rounded-lg flex items-center justify-center text-amber-300 font-mono font-bold text-sm">8</div>
+                  <div class="h-10 bg-[#0F1115] border border-amber-400 rounded-lg flex items-center justify-center text-amber-300 font-mono font-bold text-sm">4</div>
+                  <div class="h-10 bg-[#0F1115] border border-amber-400 rounded-lg flex items-center justify-center text-amber-300 font-mono font-bold text-sm">2</div>
+                  <div class="h-10 bg-[#0F1115] border border-amber-400 rounded-lg flex items-center justify-center text-amber-300 font-mono font-bold text-sm">1</div>
+                  <div class="h-10 bg-[#0F1115] border border-amber-400 rounded-lg flex items-center justify-center text-amber-300 font-mono font-bold text-sm">9</div>
+                  <div class="h-10 bg-[#0F1115] border border-amber-400 rounded-lg flex items-center justify-center text-amber-300 font-mono font-bold text-sm">0</div>
+                </div>
+
+                <div class="flex items-center justify-between text-[10px] text-slate-400">
+                  <span>Masa berlaku: 04:58</span>
+                  <span class="text-amber-400 cursor-pointer">Kirim ulang (52s)</span>
+                </div>
+
+                <button class="w-full py-2 bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 font-bold rounded-lg text-xs hover:from-amber-400 hover:to-amber-300 shadow transition">
+                  Verifikasi & Masuk Beranda 🎉
+                </button>
+              </div>
+            </div>
+
+            <!-- Explainer -->
+            <div class="flex flex-col gap-3 max-w-md">
+              <span class="text-xs font-bold text-emerald-400 tracking-wider uppercase">Aktivasi Selesai</span>
+              <h3 class="text-2xl font-bold text-white">Akun Mahasiswa Siap Digunakan!</h3>
+              <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Setelah memasukkan 6 digit OTP, akun Anda langsung terverifikasi dengan lencana <span class="text-emerald-400 font-semibold">Mahasiswa Terverifikasi ✓</span>.
+              </p>
+              <div class="bg-amber-500/10 border border-amber-500/30 p-3 rounded-xl space-y-1 text-xs text-amber-300">
+                <div class="font-bold flex items-center gap-1.5">
+                  <span>✨</span> Siapkan Minat Anda:
+                </div>
+                <p class="text-slate-300">Pilih minimal 2 minat (Programming, UI/UX, AI, Hackathon, E-Sports, dsb) untuk menyesuaikan rekomendasi teman kampus.</p>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        id: 5,
+        title: "6. Discovery & Matching (Swipe)",
+        badge: "Fitur Utama • Algoritma Match Score",
+        duration: 11,
+        subtitles: "Geser kanan untuk terkoneksi, geser kiri untuk lewati. Algoritma menampilkan skor kecocokan berdasarkan minat & jurusan.",
+        speech: "Geser kartu ke kanan untuk terhubung, atau geser ke kiri untuk melewati. Algoritma cerdas menghitung persentase kecocokan minat Anda dan partner.",
+        render: () => `
+          <div class="flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-4xl">
+            <!-- Mock Phone Preview with Matching Card -->
+            <div class="w-64 sm:w-72 bg-[#12161F] rounded-[38px] p-3 border-4 border-slate-700 phone-bezel relative shadow-2xl">
+              <div class="w-24 h-4 bg-black rounded-full mx-auto mb-2"></div>
+              
+              <!-- Card Stack -->
+              <div class="relative w-full h-[360px] rounded-2xl overflow-hidden border border-slate-700 bg-slate-900 shadow-xl">
+                <!-- Profile Image -->
+                <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop&q=80" 
+                     class="w-full h-full object-cover" alt="Nadya Kusuma">
+                
+                <!-- Match Score Badge -->
+                <div class="absolute top-3 left-3 bg-amber-500 text-slate-950 font-black text-xs px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1">
+                  <span>⚡ 94% Match</span>
+                </div>
+
+                <!-- Stamp CONNECT (Swipe Right effect) -->
+                <div class="absolute top-8 right-4 border-2 border-emerald-400 text-emerald-400 font-extrabold text-xs px-3 py-1 rounded rotate-12 bg-slate-950/70 shadow-lg">
+                  CONNECT!
+                </div>
+
+                <!-- Bottom Profile Gradient & Info -->
+                <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/80 to-transparent p-3.5 flex flex-col gap-1.5">
+                  <div class="flex items-center gap-1.5">
+                    <h4 class="text-sm font-bold text-white">Nadya Kusuma</h4>
+                    <span class="text-sky-400 text-xs">✓</span>
+                    <span class="text-[10px] text-slate-300">B24</span>
+                  </div>
+                  <div class="text-[10px] text-amber-300 font-medium">
+                    Visual Communication Design • Anggrek
+                  </div>
+                  <p class="text-[9px] text-slate-300 line-clamp-2">
+                    "UI/UX enthusiast cari partner developer buat bikin produk digital & ikut lomba UI/UX nasional."
+                  </p>
+                  <!-- Interest tags -->
+                  <div class="flex flex-wrap gap-1 pt-1">
+                    <span class="text-[8px] bg-slate-800 text-slate-200 px-1.5 py-0.5 rounded">🎨 UI/UX</span>
+                    <span class="text-[8px] bg-slate-800 text-slate-200 px-1.5 py-0.5 rounded">🏆 Hackathon</span>
+                    <span class="text-[8px] bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded font-semibold">Tujuan: Lomba</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action Swipe Buttons -->
+              <div class="flex items-center justify-center gap-4 mt-3">
+                <button class="w-11 h-11 rounded-full bg-slate-800 border border-slate-700 text-red-400 flex items-center justify-center text-lg hover:bg-slate-700 transition">
+                  ✕
+                </button>
+                <button class="w-13 h-13 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 font-black text-sm flex items-center justify-center gap-1 shadow-lg shadow-amber-500/30 hover:scale-105 transition">
+                  <span>🐝 Suka</span>
+                </button>
+                <button class="w-11 h-11 rounded-full bg-slate-800 border border-slate-700 text-sky-400 flex items-center justify-center text-lg hover:bg-slate-700 transition">
+                  ⭐
+                </button>
+              </div>
+            </div>
+
+            <!-- Explainer -->
+            <div class="flex flex-col gap-3 max-w-md">
+              <span class="text-xs font-bold text-amber-400 tracking-wider uppercase">Algoritma Transparan</span>
+              <h3 class="text-2xl font-bold text-white">Rumus Skor Match Score</h3>
+              <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Skor kecocokan bukan tebak-tebakan, melainkan dihitung dengan bobot akademis:
+              </p>
+              <div class="space-y-2 pt-1 text-xs">
+                <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800">
+                  <span class="text-amber-400 font-semibold">Kesamaan Minat (Jaccard)</span>
+                  <span class="font-mono bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">Bobot 50%</span>
+                </div>
+                <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800">
+                  <span class="text-sky-400 font-semibold">Keselarasan Jurusan/Fakultas</span>
+                  <span class="font-mono bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded">Bobot 30%</span>
+                </div>
+                <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800">
+                  <span class="text-emerald-400 font-semibold">Tujuan Networking Sama</span>
+                  <span class="font-mono bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded">Bobot 20%</span>
+                </div>
+              </div>
+              <p class="text-xs text-slate-400 italic">
+                Bila kedua mahasiswa saling menyukai: <strong>"It's a BeeMatch! 🐝🎉"</strong> langsung terbuka ruang chat.
+              </p>
+            </div>
+          </div>
+        `
+      },
+      {
+        id: 6,
+        title: "7. Chat & Icebreaker Otomatis",
+        badge: "Percakapan • Tanpa Canggung",
+        duration: 10,
+        subtitles: "Mulai obrolan tanpa canggung dengan fitur Icebreaker pintar yang menyarankan topik sesuai minat bersama.",
+        speech: "Mulai obrolan seru tanpa canggung! Fitur Icebreaker menyarankan pembuka percakapan pintar berdasarkan minat yang kalian bagikan bersama.",
+        render: () => `
+          <div class="flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-4xl">
+            <!-- Mock Phone Preview with Chat & Icebreaker -->
+            <div class="w-64 sm:w-72 bg-[#12161F] rounded-[38px] p-3 border-4 border-slate-700 phone-bezel relative shadow-2xl">
+              <div class="w-24 h-4 bg-black rounded-full mx-auto mb-2"></div>
+              <div class="bg-[#181B22] rounded-[28px] p-3 flex flex-col gap-2.5 border border-slate-800 h-[380px] justify-between">
+                
+                <!-- Chat Header -->
+                <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <div class="flex items-center gap-2">
+                    <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80" class="w-8 h-8 rounded-full object-cover border border-amber-400">
+                    <div>
+                      <div class="text-xs font-bold text-white flex items-center gap-1">
+                        Nadya Kusuma <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                      </div>
+                      <div class="text-[9px] text-amber-400">🔥 Streak 2 Hari</div>
+                    </div>
+                  </div>
+                  <span class="text-xs text-slate-400">⋮</span>
+                </div>
+
+                <!-- Chat Messages Bubble -->
+                <div class="space-y-2 overflow-y-auto flex-1 pr-1 text-[11px]">
+                  <!-- Icebreaker Suggestion Banner -->
+                  <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-2 text-center">
+                    <span class="text-[9px] text-amber-300 font-bold block mb-1">💡 Ide Pembuka Obrolan:</span>
+                    <button class="bg-[#0F1115] hover:bg-slate-800 border border-amber-500/40 text-[9px] text-slate-200 px-2 py-1 rounded-lg text-left w-full transition">
+                      "Hai Nadya! Aku lihat kamu fokus di UI/UX untuk GEMASTIK, kebetulan aku fokus di front-end dev!"
+                    </button>
+                  </div>
+
+                  <div class="bg-amber-500 text-slate-950 font-medium p-2 rounded-xl rounded-tr-none ml-6 shadow">
+                    Halo Nadya! Salam kenal, aku Rafi CS 24.
+                  </div>
+                  <div class="bg-[#222631] text-slate-200 p-2 rounded-xl rounded-tl-none mr-6 shadow border border-slate-700">
+                    Hai Rafi! Wah pas banget, aku lagi butuh developer buat lomba prototype aplikasi kampus nih!
+                  </div>
+                </div>
+
+                <!-- Chat Input Field -->
+                <div class="bg-[#0F1115] border border-slate-700 rounded-xl px-2 py-1.5 flex items-center gap-1.5">
+                  <input type="text" placeholder="Ketik pesan..." class="bg-transparent text-[11px] text-white flex-1 focus:outline-none" value="Yuk ketemu di Perpus Anggrek!" readonly>
+                  <button class="w-6 h-6 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center text-xs font-bold">
+                    ➤
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Explainer -->
+            <div class="flex flex-col gap-3 max-w-md">
+              <span class="text-xs font-bold text-sky-400 tracking-wider uppercase">Kolaborasi Instan</span>
+              <h3 class="text-2xl font-bold text-white">Icebreaker Pintar & Relevan</h3>
+              <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Bingung membuka percakapan pertama? BeeMate menganalisis minat kedua belah pihak dan menyiapkan kartu <span class="text-amber-400 font-semibold">Icebreaker Contextual</span> yang bisa dikirimkan hanya dengan satu ketukan!
+              </p>
+              <div class="space-y-2 pt-1 text-xs text-slate-300">
+                <div class="flex items-center gap-2">
+                  <span class="text-emerald-400">✓</span> Pesan terkirim dan terbaca secara real-time
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-emerald-400">✓</span> Mendukung kirim gambar portofolio & desain UI/UX
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-amber-400">✓</span> Indikator waktu dan keamanan pesan
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        id: 7,
+        title: "8. Chat Streak 🔥 & Proteksi",
+        badge: "Engagement • Fitur Chat Streak",
+        duration: 10,
+        subtitles: "Jaga keaktifan chat harian untuk menyalakan Streak 🔥. Fitur Video Call baru akan terbuka setelah 3 hari berturut-turut!",
+        speech: "Jaga keaktifan chat harian untuk menyalakan Chat Streak. Demi kenyamanan, fitur Video Call baru akan terbuka setelah kalian aktif mengobrol selama tiga hari.",
+        render: () => `
+          <div class="flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-4xl">
+            <!-- Mock Phone Preview -->
+            <div class="w-64 sm:w-72 bg-[#12161F] rounded-[38px] p-3 border-4 border-slate-700 phone-bezel relative shadow-2xl">
+              <div class="w-24 h-4 bg-black rounded-full mx-auto mb-2"></div>
+              <div class="bg-[#181B22] rounded-[28px] p-4 flex flex-col gap-3 border border-slate-800 text-center">
+                
+                <!-- Glowing Fire Badge -->
+                <div class="relative w-24 h-24 mx-auto my-2">
+                  <div class="absolute inset-0 bg-orange-500/30 rounded-full blur-xl animate-pulse"></div>
+                  <div class="relative w-full h-full bg-gradient-to-tr from-orange-600 via-amber-500 to-yellow-400 rounded-full flex flex-col items-center justify-center shadow-lg border-2 border-amber-300">
+                    <span class="text-3xl">🔥</span>
+                    <span class="font-black text-slate-950 text-sm font-mono tracking-tighter">3 HARI</span>
+                  </div>
+                </div>
+
+                <h4 class="text-xs font-bold text-white">Streak Video Call Terbuka! 🎉</h4>
+                <p class="text-[10px] text-slate-300">
+                  Selamat! Kalian telah konsisten mengobrol selama 3 hari berturut-turut.
+                </p>
+
+                <!-- Unlocked Video Call Button -->
+                <div class="bg-gradient-to-r from-emerald-600 to-teal-500 p-2.5 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
+                  <span>📹 Video Call Kini Aktif!</span>
+                </div>
+
+                <div class="text-[9px] text-slate-400 border-t border-slate-800 pt-2 flex items-center justify-center gap-1">
+                  <span>⏳</span> Kirim pesan sebelum 24 jam agar streak tidak padam
+                </div>
+              </div>
+            </div>
+
+            <!-- Explainer -->
+            <div class="flex flex-col gap-3 max-w-md">
+              <span class="text-xs font-bold text-orange-400 tracking-wider uppercase">Keamanan & Keakraban</span>
+              <h3 class="text-2xl font-bold text-white">Kenapa Butuh 3 Hari Streak?</h3>
+              <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Banyak aplikasi networking disalahgunakan untuk spam panggilan telepon mendadak yang mengganggu. Di BeeMate:
+              </p>
+              <div class="space-y-2 pt-1 text-xs">
+                <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 flex items-start gap-2">
+                  <span class="text-orange-400 font-bold">🔒</span>
+                  <div class="text-slate-300">Tombol Video Call <strong>terkunci rapat</strong> pada hari ke-1 dan ke-2 untuk memastikan saling kenal terlebih dahulu.</div>
+                </div>
+                <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 flex items-start gap-2">
+                  <span class="text-emerald-400 font-bold">🔥</span>
+                  <div class="text-slate-300">Pada <strong>hari ke-3 streak</strong>, tombol video call terbuka otomatis untuk diskusi tugas dan belajar bareng.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        id: 8,
+        title: "9. Video Call & Panggilan Cepat",
+        badge: "Kolaborasi • Tatap Muka Digital",
+        duration: 10,
+        subtitles: "Video call stabil untuk belajar bareng. Sedang ada kelas? Balas cepat panggilan dengan opsi 'Nanti ya, aku lagi kuliah'.",
+        speech: "Video call jernih untuk diskusi proyek kampus. Bila sedang di kelas, Anda bisa menolak dengan cepat melalui pesan otomatis: Nanti ya, aku lagi kuliah.",
+        render: () => `
+          <div class="flex flex-col md:flex-row items-center justify-center gap-8 w-full max-w-4xl">
+            <!-- Mock Phone Preview Video Call Screen -->
+            <div class="w-64 sm:w-72 bg-[#12161F] rounded-[38px] p-3 border-4 border-slate-700 phone-bezel relative shadow-2xl">
+              <div class="w-24 h-4 bg-black rounded-full mx-auto mb-2"></div>
+              
+              <!-- Video Call Layout -->
+              <div class="relative w-full h-[360px] rounded-2xl overflow-hidden border border-slate-700 bg-slate-900 flex flex-col justify-between p-3">
+                <!-- Partner Video Background Mock -->
+                <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=600&auto=format&fit=crop&q=80" 
+                     class="absolute inset-0 w-full h-full object-cover opacity-80" alt="Video Call Partner">
+                
+                <!-- Floating Call Info Header -->
+                <div class="relative z-10 flex items-center justify-between bg-black/60 backdrop-blur-md px-2.5 py-1.5 rounded-full border border-white/10">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-[10px] font-bold text-white">Nadya Kusuma</span>
+                  </div>
+                  <span class="text-[10px] font-mono text-amber-300">12:45</span>
+                </div>
+
+                <!-- Self Video Pip (Picture-in-Picture) -->
+                <div class="absolute bottom-16 right-3 w-16 h-22 bg-slate-800 rounded-xl border border-amber-400 overflow-hidden shadow-2xl z-10">
+                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80" class="w-full h-full object-cover">
+                </div>
+
+                <!-- In-Call Action Toolbar -->
+                <div class="relative z-10 flex items-center justify-center gap-3 bg-black/70 backdrop-blur-md py-2 px-3 rounded-2xl mx-auto border border-white/10">
+                  <button class="w-8 h-8 rounded-full bg-slate-800 text-white text-xs flex items-center justify-center">🎤</button>
+                  <button class="w-8 h-8 rounded-full bg-slate-800 text-white text-xs flex items-center justify-center">📷</button>
+                  <button class="w-8 h-8 rounded-full bg-slate-800 text-white text-xs flex items-center justify-center">🔄</button>
+                  <button class="w-8 h-8 rounded-full bg-red-600 text-white text-xs flex items-center justify-center font-bold">✕</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Explainer -->
+            <div class="flex flex-col gap-3 max-w-md">
+              <span class="text-xs font-bold text-emerald-400 tracking-wider uppercase">Solusi Ramah Akademik</span>
+              <h3 class="text-2xl font-bold text-white">Fitur Panggilan & Quick Reply</h3>
+              <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Dirancang khusus untuk ritme perkuliahan mahasiswa Binus yang padat:
+              </p>
+              <div class="space-y-2 pt-1 text-xs">
+                <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 text-slate-300">
+                  <strong class="text-amber-400 block mb-0.5">💬 Balas Cepat "Lagi Kuliah":</strong>
+                  Tolak panggilan masuk dengan satu sentuhan template: <em>"Nanti ya, aku lagi kuliah."</em> Panggilan tak terjawab langsung tercatat rapi di ruang chat.
+                </div>
+                <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 text-slate-300">
+                  <strong class="text-sky-400 block mb-0.5">🛡️ Mode Jangan Ganggu (DND):</strong>
+                  Aktifkan di menu profil saat Anda sedang ujian (UTS/UAS) atau sidang skripsi agar tidak ada notifikasi panggilan yang masuk.
+                </div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        id: 9,
+        title: "10. Penutup: Ayo Bergabung!",
+        badge: "Mulai Sekarang • BeeMate Binus",
+        duration: 9,
+        subtitles: "Bangun koneksi berharga dan raih prestasi bersama di BeeMate. Selamat mencoba!",
+        speech: "Bangun koneksi berharga dan raih prestasi bersama di Bee Mate. Selamat mencoba dan salam sukses untuk seluruh Binusian!",
+        render: () => `
+          <div class="flex flex-col items-center justify-center text-center gap-6 max-w-3xl animate-fade-in">
+            <div class="w-24 h-24 rounded-3xl bg-gradient-to-tr from-amber-500 via-amber-400 to-amber-300 flex items-center justify-center text-5xl shadow-2xl shadow-amber-500/30 animate-float border-2 border-amber-300">
+              🐝
+            </div>
+            
+            <div class="space-y-2">
+              <span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/40">
+                Siap Melangkah Lebih Jauh di Kampus?
+              </span>
+              <h2 class="text-3xl sm:text-5xl font-black text-white tracking-tight">
+                Terhubung, Berkolaborasi & Berprestasi!
+              </h2>
+              <p class="text-sm sm:text-base text-slate-300 max-w-xl mx-auto leading-relaxed">
+                Gunakan BeeMate sekarang untuk menemukan teman sefrekuensi, tim lomba GEMASTIK, hingga partner riset di seluruh kampus Binus.
+              </p>
+            </div>
+
+            <!-- Call to Action Buttons -->
+            <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button onclick="window.player.playScene(0)" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-amber-500/25 transition">
+                <span>🔄 Putar Ulang Video</span>
+              </button>
+              <button onclick="document.getElementById('btnRecordVideo').click()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-medium text-xs sm:text-sm flex items-center gap-2 transition">
+                <span>📥 Unduh Video Animasi Ini</span>
+              </button>
+            </div>
+          </div>
+        `
+      }
+    ];
+
+    // --- 4. VIDEO PLAYER ENGINE ---
+    class VideoPlayer {
+      constructor(scenes) {
+        this.scenes = scenes;
+        this.currentSceneIdx = 0;
+        this.isPlaying = false;
+        this.playbackRate = 1.0;
+        this.currentTime = 0; // in seconds
+        this.totalDuration = scenes.reduce((acc, s) => acc + s.duration, 0);
+        this.timer = null;
+        this.lastTimestamp = null;
+
+        // Elements
+        this.stageEl = document.getElementById('sceneStage');
+        this.subtitleTextEl = document.getElementById('subtitleText');
+        this.sceneBadgeEl = document.getElementById('sceneBadgeText');
+        this.progressBarEl = document.getElementById('progressBar');
+        this.currentTimeEl = document.getElementById('currentTime');
+        this.totalDurationEl = document.getElementById('totalDuration');
+        this.playIconEl = document.getElementById('playIcon');
+        this.playLabelEl = document.getElementById('playLabel');
+
+        this.init();
+      }
+
+      init() {
+        this.totalDurationEl.textContent = this.formatTime(this.totalDuration);
+        this.renderScene(0);
+        this.bindEvents();
+      }
+
+      formatTime(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      }
+
+      bindEvents() {
+        document.getElementById('btnPlayPause').addEventListener('click', () => this.togglePlay());
+        document.getElementById('btnRestart').addEventListener('click', () => this.restart());
+        document.getElementById('btnPrev').addEventListener('click', () => this.prevScene());
+        document.getElementById('btnNext').addEventListener('click', () => this.nextScene());
+        
+        // Progress bar scrubbing
+        this.progressBarEl.addEventListener('input', (e) => {
+          const ratio = e.target.value / 1000;
+          this.seekTo(ratio * this.totalDuration);
+        });
+
+        // Speed change
+        document.getElementById('speedSelector').addEventListener('change', (e) => {
+          this.playbackRate = parseFloat(e.target.value);
+        });
+
+        // Scene pills click
+        document.querySelectorAll('.scene-tab').forEach(tab => {
+          tab.addEventListener('click', (e) => {
+            const idx = parseInt(e.currentTarget.getAttribute('data-scene'));
+            this.playScene(idx);
+          });
+        });
+
+        // Keyboard spacebar shortcut
+        window.addEventListener('keydown', (e) => {
+          if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
+            e.preventDefault();
+            this.togglePlay();
+          }
+        });
+      }
+
+      renderScene(index) {
+        this.currentSceneIdx = Math.max(0, Math.min(index, this.scenes.length - 1));
+        const scene = this.scenes[this.currentSceneIdx];
+
+        // Render stage DOM
+        this.stageEl.innerHTML = scene.render();
+        this.subtitleTextEl.textContent = scene.subtitles;
+        this.sceneBadgeEl.textContent = scene.title;
+
+        // Update active chapter pills
+        document.querySelectorAll('.scene-tab').forEach((tab, i) => {
+          if (i === this.currentSceneIdx) {
+            tab.className = "scene-tab px-2.5 py-1 text-[11px] rounded-lg bg-amber-500/25 text-amber-300 border border-amber-500/50 font-bold whitespace-nowrap shadow";
+          } else {
+            tab.className = "scene-tab px-2.5 py-1 text-[11px] rounded-lg bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/60 font-medium whitespace-nowrap";
+          }
+        });
+
+        // SFX and Narration
+        sfx.whoosh();
+        if (this.isPlaying) {
+          narrator.speak(scene.speech, this.playbackRate);
+        }
+      }
+
+      playScene(index) {
+        // Calculate offset in seconds
+        let offset = 0;
+        for (let i = 0; i < index; i++) {
+          offset += this.scenes[i].duration;
+        }
+        this.seekTo(offset);
+        if (!this.isPlaying) {
+          this.play();
+        }
+      }
+
+      seekTo(seconds) {
+        this.currentTime = Math.max(0, Math.min(seconds, this.totalDuration));
+        this.updateTimeDisplay();
+
+        // Determine which scene corresponds to this time
+        let accumulated = 0;
+        let targetScene = 0;
+        for (let i = 0; i < this.scenes.length; i++) {
+          if (this.currentTime >= accumulated && this.currentTime < accumulated + this.scenes[i].duration) {
+            targetScene = i;
+            break;
+          }
+          accumulated += this.scenes[i].duration;
+        }
+        if (this.currentTime >= this.totalDuration) {
+          targetScene = this.scenes.length - 1;
+        }
+
+        if (targetScene !== this.currentSceneIdx) {
+          this.renderScene(targetScene);
+        }
+      }
+
+      togglePlay() {
+        if (this.isPlaying) {
+          this.pause();
+        } else {
+          this.play();
+        }
+      }
+
+      play() {
+        if (this.currentTime >= this.totalDuration) {
+          this.currentTime = 0;
+        }
+        this.isPlaying = true;
+        this.playIconEl.innerHTML = `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+        this.playLabelEl.textContent = 'Jeda';
+        
+        narrator.speak(this.scenes[this.currentSceneIdx].speech, this.playbackRate);
+        this.lastTimestamp = performance.now();
+        this.tick();
+      }
+
+      pause() {
+        this.isPlaying = false;
+        this.playIconEl.innerHTML = `<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+        this.playLabelEl.textContent = 'Putar Animasi';
+        narrator.stop();
+        if (this.timer) {
+          cancelAnimationFrame(this.timer);
+          this.timer = null;
+        }
+      }
+
+      restart() {
+        this.pause();
+        this.seekTo(0);
+        this.play();
+      }
+
+      prevScene() {
+        if (this.currentSceneIdx > 0) {
+          this.playScene(this.currentSceneIdx - 1);
+        }
+      }
+
+      nextScene() {
+        if (this.currentSceneIdx < this.scenes.length - 1) {
+          this.playScene(this.currentSceneIdx + 1);
+        }
+      }
+
+      updateTimeDisplay() {
+        this.currentTimeEl.textContent = this.formatTime(this.currentTime);
+        const ratio = (this.currentTime / this.totalDuration) * 1000;
+        this.progressBarEl.value = Math.min(1000, ratio);
+      }
+
+      tick() {
+        if (!this.isPlaying) return;
+        const now = performance.now();
+        const delta = (now - this.lastTimestamp) / 1000;
+        this.lastTimestamp = now;
+
+        this.currentTime += delta * this.playbackRate;
+        this.updateTimeDisplay();
+
+        // Check if we advanced to next scene
+        let accumulated = 0;
+        let expectedScene = 0;
+        for (let i = 0; i < this.scenes.length; i++) {
+          if (this.currentTime >= accumulated && this.currentTime < accumulated + this.scenes[i].duration) {
+            expectedScene = i;
+            break;
+          }
+          accumulated += this.scenes[i].duration;
+        }
+
+        if (this.currentTime >= this.totalDuration) {
+          this.pause();
+          this.currentTime = this.totalDuration;
+          this.updateTimeDisplay();
+          return;
+        }
+
+        if (expectedScene !== this.currentSceneIdx) {
+          this.renderScene(expectedScene);
+        }
+
+        this.timer = requestAnimationFrame(() => this.tick());
+      }
+    }
+
+    const player = new VideoPlayer(SCENES);
+    window.player = player;
+
+    // --- 5. AUDIO & RECORDING HANDLERS ---
+    // Voice Toggle
+    const btnVoice = document.getElementById('btnVoiceToggle');
+    btnVoice.addEventListener('click', () => {
+      narrator.enabled = !narrator.enabled;
+      document.getElementById('voiceIcon').textContent = narrator.enabled ? '🔊' : '🔇';
+      document.getElementById('voiceLabel').textContent = narrator.enabled ? 'Narasi Suara: ON' : 'Narasi Suara: OFF';
+      if (!narrator.enabled) narrator.stop();
+      else if (player.isPlaying) narrator.speak(SCENES[player.currentSceneIdx].speech, player.playbackRate);
+    });
+
+    // SFX Toggle
+    const btnSfx = document.getElementById('btnSfxToggle');
+    btnSfx.addEventListener('click', () => {
+      sfx.enabled = !sfx.enabled;
+      document.getElementById('sfxIcon').textContent = sfx.enabled ? '🔔' : '🔕';
+      document.getElementById('sfxLabel').textContent = sfx.enabled ? 'SFX: ON' : 'SFX: OFF';
+      if (sfx.enabled) sfx.tap();
+    });
+
+    // Fullscreen Toggle
+    document.getElementById('btnFullscreen').addEventListener('click', () => {
+      const container = document.getElementById('videoContainer');
+      if (!document.fullscreenElement) {
+        if (container.requestFullscreen) container.requestFullscreen();
+        else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    });
+
+    // --- 6. WEBM VIDEO RECORDER & EXPORTER ---
+    // Uses Canvas + MediaRecorder to record animated scenes directly to a downloadable WebM video
+    const btnRecord = document.getElementById('btnRecordVideo');
+    const recDot = document.getElementById('recDot');
+    const btnRecordText = document.getElementById('btnRecordText');
+    let isRecording = false;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+
+    btnRecord.addEventListener('click', async () => {
+      if (isRecording) {
+        // Stop recording early
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+        return;
+      }
+
+      // Start Recording
+      isRecording = true;
+      recDot.style.display = 'inline-block';
+      btnRecordText.textContent = 'Merekam... (Tunggu)';
+      btnRecord.classList.add('bg-red-500', 'text-white');
+      btnRecord.classList.remove('bg-gradient-to-r', 'from-amber-500', 'to-amber-600', 'text-slate-950');
+
+      const canvas = document.getElementById('recorderCanvas');
+      const ctx = canvas.getContext('2d');
+      recordedChunks = [];
+
+      // Canvas stream at 30fps
+      const stream = canvas.captureStream(30);
+      try {
+        mediaRecorder = new MediaRecorder(stream, {
+          mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm'
+        });
+      } catch (err) {
+        mediaRecorder = new MediaRecorder(stream);
+      }
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        isRecording = false;
+        recDot.style.display = 'none';
+        btnRecordText.textContent = 'Unduh Video WebM';
+        btnRecord.classList.remove('bg-red-500', 'text-white');
+        btnRecord.classList.add('bg-gradient-to-r', 'from-amber-500', 'to-amber-600', 'text-slate-950');
+
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `BeeMate-Video-Animasi-Cara-Penggunaan.webm`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        }, 100);
+      };
+
+      mediaRecorder.start();
+
+      // Start video playback from beginning
+      player.restart();
+
+      // Render loop to capture video frames to canvas
+      let recordFrameId;
+      const renderToCanvas = () => {
+        if (!isRecording) return;
+        
+        // Draw background
+        ctx.fillStyle = '#090B0E';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Header branding
+        ctx.fillStyle = '#F59E0B';
+        ctx.font = 'bold 28px Plus Jakarta Sans, sans-serif';
+        ctx.fillText('🐝 BeeMate — Binus University Networking App', 50, 60);
+
+        // Current scene info
+        const scene = SCENES[player.currentSceneIdx];
+        ctx.fillStyle = '#94A3B8';
+        ctx.font = '18px Plus Jakarta Sans, sans-serif';
+        ctx.fillText(`Chapter: ${scene.title}`, 50, 95);
+
+        // Render a stylized card representing the current step
+        ctx.fillStyle = '#181B22';
+        ctx.strokeStyle = '#F59E0B';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.roundRect(100, 140, 1080, 420, 24);
+        ctx.fill();
+        ctx.stroke();
+
+        // Scene Title inside frame
+        ctx.fillStyle = '#F8FAFC';
+        ctx.font = 'bold 36px Plus Jakarta Sans, sans-serif';
+        ctx.fillText(scene.badge, 140, 210);
+
+        // Subtitle / Narration text
+        ctx.fillStyle = '#FCD34D';
+        ctx.font = '22px Plus Jakarta Sans, sans-serif';
+        const words = scene.subtitles.split(' ');
+        let line = '';
+        let y = 280;
+        for (let n = 0; n < words.length; n++) {
+          let testLine = line + words[n] + ' ';
+          if (testLine.length > 60 && n > 0) {
+            ctx.fillText(line, 140, y);
+            line = words[n] + ' ';
+            y += 36;
+          } else {
+            line = testLine;
+          }
+        }
+        ctx.fillText(line, 140, y);
+
+        // Footer time stamp
+        ctx.fillStyle = '#64748B';
+        ctx.font = '16px monospace';
+        ctx.fillText(`Waktu: ${player.formatTime(player.currentTime)} / ${player.formatTime(player.totalDuration)}`, 140, 510);
+
+        // Check if finished
+        if (player.currentTime >= player.totalDuration - 0.2) {
+          mediaRecorder.stop();
+          return;
+        }
+
+        recordFrameId = requestAnimationFrame(renderToCanvas);
+      };
+
+      renderToCanvas();
+    });
+  </script>
+</body>
+</html>
